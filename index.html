@@ -419,13 +419,13 @@ body {
 .task-del:hover { color: #7a1e0e; }
 
 .task-due {
-  width: 86px;
+  width: 128px;
   flex-shrink: 0;
   background: transparent;
   border: none;
   outline: none;
   font-family: 'Patrick Hand', cursive;
-  font-size: 12.5px;
+  font-size: 12px;
   color: #9a7a42;
   height: 32px;
   padding: 0 2px;
@@ -561,21 +561,7 @@ body {
    FIREBASE CONFIG — replace with your own values
    from https://console.firebase.google.com
    ════════════════════════════════════════════════ */
-const firebaseConfig = {
-
-  apiKey: "AIzaSyB4X39XP-wiSqZ8NsCw2GXIH_j3WkBChGs",
-
-  authDomain: "homework-planner-e0908.firebaseapp.com",
-
-  projectId: "homework-planner-e0908",
-
-  storageBucket: "homework-planner-e0908.firebasestorage.app",
-
-  messagingSenderId: "593664726434",
-
-  appId: "1:593664726434:web:07afb498b6e39c9af28efb"
-
-};
+const firebaseConfig = {    apiKey: "AIzaSyB4X39XP-wiSqZ8NsCw2GXIH_j3WkBChGs",    authDomain: "homework-planner-e0908.firebaseapp.com",    projectId: "homework-planner-e0908",    storageBucket: "homework-planner-e0908.firebasestorage.app",    messagingSenderId: "593664726434",    appId: "1:593664726434:web:07afb498b6e39c9af28efb"  };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -769,6 +755,20 @@ function parseDue(str) {
   return isNaN(d) ? null : d;
 }
 
+function ordinal(n) {
+  const v = n % 100;
+  const s = ['th','st','nd','rd'];
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function formatDueDisplay(due) {
+  const d = parseDue(due);
+  if (!d) return due;
+  return `${MONTHS[d.getMonth()]} ${ordinal(d.getDate())} ${d.getFullYear()}`;
+}
+
 /* ── Day section builder ─────────────────────── */
 const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
@@ -824,15 +824,14 @@ function buildDaySection(date, dayIndex) {
       dueInp.type = 'text';
       dueInp.className = 'task-due';
       dueInp.placeholder = 'DD/MM/YYYY';
-      dueInp.maxLength = 10;
-      dueInp.value = task.due || '';
+      dueInp.value = task.due ? formatDueDisplay(task.due) : '';
 
       const del = document.createElement('button');
       del.className = 'task-del';
       del.textContent = '✕';
 
       function updateDueStyle() {
-        const d = parseDue(dueInp.value);
+        const d = parseDue(tasks[i].due);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (d && d < today && !tasks[i].done) {
@@ -875,9 +874,22 @@ function buildDaySection(date, dayIndex) {
       });
 
       dueInp.addEventListener('input', () => {
-        tasks[i].due = dueInp.value;
+        const raw = dueInp.value.replace(/\D/g, '').slice(0, 8);
+        let formatted = raw;
+        if (raw.length > 4) formatted = raw.slice(0,2) + '/' + raw.slice(2,4) + '/' + raw.slice(4);
+        else if (raw.length > 2) formatted = raw.slice(0,2) + '/' + raw.slice(2);
+        dueInp.value = formatted;
+        tasks[i].due = formatted;
         saveTasks(key, tasks);
         updateDueStyle();
+      });
+
+      dueInp.addEventListener('blur', () => {
+        if (tasks[i].due) dueInp.value = formatDueDisplay(tasks[i].due);
+      });
+
+      dueInp.addEventListener('focus', () => {
+        dueInp.value = tasks[i].due || '';
       });
 
       del.addEventListener('click', () => {
