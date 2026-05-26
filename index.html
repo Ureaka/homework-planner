@@ -112,9 +112,11 @@ body {
 .task-input.done        { text-decoration: line-through; color: #9a8770; }
 .task-input::placeholder { color: #c0a870; font-style: italic; }
 
-.task-due { width: 128px; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; padding: 0 2px; text-align: right; }
+.task-due { width: 128px; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; padding: 0 2px; text-align: right; overflow: hidden; transition: width 0.18s ease, opacity 0.18s ease, padding 0.18s ease; }
 .task-due::placeholder { color: #d0b880; font-style: italic; }
 .task-due.overdue      { color: #7a1e0e; font-weight: 600; }
+.task-item:hover .task-due { width: 0; opacity: 0; padding: 0; }
+.task-due:focus { width: 128px !important; opacity: 1 !important; padding: 0 2px !important; }
 
 .task-link-btn { opacity: 0; background: none; border: none; color: #b8a07a; cursor: pointer; font-size: 14px; line-height: 32px; padding: 0 2px; flex-shrink: 0; transition: opacity 0.12s, color 0.12s; font-family: 'Patrick Hand', cursive; }
 .task-item:hover .task-link-btn { opacity: 1; }
@@ -133,10 +135,10 @@ body {
 .task-url-open { font-family: 'Patrick Hand', cursive; font-size: 12.5px; color: #4a6fa5; text-decoration: none; flex-shrink: 0; white-space: nowrap; padding: 0 2px; }
 .task-url-open:hover { text-decoration: underline; }
 
-.task-url-open-inline { font-family: 'Patrick Hand', cursive; font-size: 12px; color: #4a6fa5; text-decoration: none; flex-shrink: 0; white-space: nowrap; line-height: 32px; padding: 0 2px; }
-.task-url-open-inline:hover { text-decoration: underline; }
+.task-url-open-inline { color: #4a6fa5; text-decoration: none; flex-shrink: 0; display: inline-flex; align-items: center; padding: 0 2px; transition: color 0.12s; }
+.task-url-open-inline:hover { color: #2b5a9a; }
 
-.task-desc-btn { opacity: 0; background: none; border: none; color: #b8a07a; cursor: pointer; font-size: 13px; line-height: 32px; padding: 0 2px; flex-shrink: 0; transition: opacity 0.12s, color 0.12s; font-family: 'Patrick Hand', cursive; }
+.task-desc-btn { opacity: 0; background: none; border: none; color: #b8a07a; cursor: pointer; display: inline-flex; align-items: center; padding: 0 2px; flex-shrink: 0; transition: opacity 0.12s, color 0.12s; }
 .task-item:hover .task-desc-btn { opacity: 1; }
 .task-desc-btn.has-desc { opacity: 1; color: #7a5820; }
 .task-desc-btn:hover { color: #2b1805; }
@@ -189,21 +191,54 @@ body.dragging-active .day-drop-zone { display: flex; }
 .page-left  .page-foot { right: 16px; }
 .page-right .page-foot { left: 58px; }
 
+/* ── Mobile nav bar (bottom) ─────────────────── */
+.mobile-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 8px 32px calc(env(safe-area-inset-bottom, 0px) + 8px);
+  background: rgba(20,12,4,0.95);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(242,231,209,0.1);
+  align-items: center; justify-content: space-between;
+  z-index: 100;
+}
+.mobile-nav .nav-btn { display: flex; width: 56px; height: 48px; font-size: 22px; }
+
 /* ── Mobile ──────────────────────────────────── */
 @media (max-width: 700px) {
-  .wrapper  { gap: 10px; padding: 60px 8px 24px; }
-  .nav-btn  { width: 40px; height: 56px; font-size: 20px; }
-  .mobile-tabs { display: flex; }
-  .spine    { display: none; }
-  .page     { width: calc(100vw - 120px); min-height: unset; }
-  .page-left  { border-radius: 5px; }
-  .page-right { border-radius: 5px; display: none; }
+  body { justify-content: flex-start; }
+  #app {
+    height: 100dvh; justify-content: flex-start;
+    overflow: hidden;
+  }
+  .user-bar {
+    position: relative; width: 100%;
+    padding: calc(env(safe-area-inset-top, 10px) + 4px) 12px 4px;
+    justify-content: flex-end;
+  }
+  .user-name   { display: none; }
+  .mobile-tabs {
+    display: flex; justify-content: center;
+    width: 100%; padding: 0 12px 8px; margin-bottom: 0;
+  }
+  .wrapper {
+    flex: 1; overflow-y: auto;
+    padding: 8px 0 calc(env(safe-area-inset-bottom, 0px) + 80px);
+    justify-content: flex-start; align-items: stretch;
+    gap: 0;
+  }
+  .nav-btn     { display: none; }
+  .notebook    { width: 100%; border-radius: 0; box-shadow: none; }
+  .spine       { display: none; }
+  .page        { width: 100%; min-height: unset; }
+  .page-left   { border-radius: 0; }
+  .page-right  { border-radius: 0; display: none; }
   .notebook.show-right .page-left  { display: none; }
   .notebook.show-right .page-right { display: block; }
-  .drag-handle     { display: none !important; }
-  .day-drop-zone   { display: none !important; }
-  .user-name       { display: none; }
-  .task-due        { width: 96px; font-size: 11px; }
+  .drag-handle   { display: none !important; }
+  .day-drop-zone { display: none !important; }
+  .task-due      { width: 96px; font-size: 11px; }
+  .mobile-nav    { display: flex; }
 }
 </style>
 </head>
@@ -239,6 +274,7 @@ body.dragging-active .day-drop-zone { display: flex; }
   <div class="wrapper" id="appWrapper">
     <div class="loading-text">Loading...</div>
   </div>
+  <div class="mobile-nav" id="mobileNav"></div>
 </div>
 
 <!-- ── Firebase ───────────────────────────────── -->
@@ -374,6 +410,18 @@ function initNotebook() {
 
   prevBtn.addEventListener('click', () => changeWeek(-1));
   nextBtn.addEventListener('click', () => changeWeek(1));
+
+  /* Mobile bottom nav */
+  const mobileNavEl = document.getElementById('mobileNav');
+  mobileNavEl.innerHTML = '';
+  const mobPrev = document.createElement('button');
+  mobPrev.className = 'nav-btn'; mobPrev.innerHTML = '&#8592;'; mobPrev.title = 'Previous week';
+  mobPrev.addEventListener('click', () => changeWeek(-1));
+  const mobNext = document.createElement('button');
+  mobNext.className = 'nav-btn'; mobNext.innerHTML = '&#8594;'; mobNext.title = 'Next week';
+  mobNext.addEventListener('click', () => changeWeek(1));
+  mobileNavEl.appendChild(mobPrev); mobileNavEl.appendChild(mobNext);
+
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'ArrowLeft')  changeWeek(-1);
@@ -586,13 +634,14 @@ function buildDaySection(date, dayIndex) {
       /* description button */
       const descBtn = document.createElement('button');
       descBtn.className = 'task-desc-btn' + (task.desc ? ' has-desc' : '');
-      descBtn.textContent = 'desc';
+      descBtn.innerHTML = '<svg width="14" height="10" viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="22" height="16" rx="2"/><path d="M5 6h.01M9 6h.01M13 6h.01M17 6h.01M7 10h.01M11 10h.01M15 10h.01M6 14h12"/></svg>';
       descBtn.title = 'Add description';
 
       /* inline open link — always visible in the row when a URL is set */
       const urlOpenInline = document.createElement('a');
       urlOpenInline.className = 'task-url-open-inline';
-      urlOpenInline.textContent = 'open \u2197';
+      urlOpenInline.innerHTML = '<svg width="11" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
+      urlOpenInline.title = 'Open link';
       urlOpenInline.target = '_blank'; urlOpenInline.rel = 'noopener noreferrer';
       urlOpenInline.href = sanitizeUrl(task.url);
       urlOpenInline.style.display = task.url ? '' : 'none';
