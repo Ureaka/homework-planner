@@ -116,16 +116,16 @@ body {
 .task-due::placeholder { color: #d0b880; font-style: italic; }
 .task-due.overdue      { color: #7a1e0e; font-weight: 600; }
 
-.task-link-btn { opacity: 0; background: none; border: none; color: #b8a07a; cursor: pointer; font-size: 14px; line-height: 32px; padding: 0 2px; flex-shrink: 0; transition: opacity 0.12s, color 0.12s; font-family: 'Patrick Hand', cursive; }
-.task-item:hover .task-link-btn { opacity: 1; }
-.task-link-btn.has-link { opacity: 1; color: #4a6fa5; }
+.task-link-btn { max-width: 0; overflow: hidden; opacity: 0; padding: 0; background: none; border: none; color: #b8a07a; cursor: pointer; font-size: 14px; line-height: 32px; flex-shrink: 0; transition: max-width 0.12s ease, opacity 0.12s, padding 0.12s; font-family: 'Patrick Hand', cursive; }
+.task-item:hover .task-link-btn { max-width: 22px; opacity: 1; padding: 0 2px; }
+.task-link-btn.has-link { max-width: 22px; opacity: 1; padding: 0 2px; color: #4a6fa5; }
 .task-link-btn:hover    { color: #2b5a9a; }
 
-.task-del { opacity: 0; background: none; border: none; color: #b8a07a; cursor: pointer; font-size: 13px; line-height: 32px; padding: 0 2px; flex-shrink: 0; transition: opacity 0.12s, color 0.12s; }
-.task-item:hover .task-del { opacity: 1; }
+.task-del { max-width: 0; overflow: hidden; opacity: 0; padding: 0; background: none; border: none; color: #b8a07a; cursor: pointer; font-size: 13px; line-height: 32px; flex-shrink: 0; transition: max-width 0.12s ease, opacity 0.12s, padding 0.12s; }
+.task-item:hover .task-del { max-width: 22px; opacity: 1; padding: 0 2px; }
 .task-del:hover            { color: #7a1e0e; }
 
-.task-icons { display: flex; align-items: center; flex-shrink: 0; width: 90px; justify-content: flex-end; gap: 4px; }
+.task-icons { display: flex; align-items: center; flex-shrink: 0; width: 90px; justify-content: flex-end; }
 
 /* URL row */
 .task-url-row { display: none; align-items: center; gap: 8px; height: 28px; padding-left: 24px; }
@@ -135,12 +135,13 @@ body {
 .task-url-open { font-family: 'Patrick Hand', cursive; font-size: 12.5px; color: #4a6fa5; text-decoration: none; flex-shrink: 0; white-space: nowrap; padding: 0 2px; }
 .task-url-open:hover { text-decoration: underline; }
 
-.task-url-open-inline { color: #4a6fa5; text-decoration: none; flex-shrink: 0; display: inline-flex; align-items: center; padding: 0 2px; transition: color 0.12s; }
+.task-url-open-inline { max-width: 0; overflow: hidden; opacity: 0; padding: 0; color: #4a6fa5; text-decoration: none; flex-shrink: 0; display: inline-flex; align-items: center; transition: max-width 0.12s ease, opacity 0.12s, padding 0.12s; }
+.task-url-open-inline.visible { max-width: 22px; opacity: 1; padding: 0 2px; }
 .task-url-open-inline:hover { color: #2b5a9a; }
 
-.task-desc-btn { opacity: 0; background: none; border: none; color: #b8a07a; cursor: pointer; display: inline-flex; align-items: center; padding: 0 2px; flex-shrink: 0; transition: opacity 0.12s, color 0.12s; }
-.task-item:hover .task-desc-btn { opacity: 1; }
-.task-desc-btn.has-desc { opacity: 1; color: #7a5820; }
+.task-desc-btn { max-width: 0; overflow: hidden; opacity: 0; padding: 0; background: none; border: none; color: #b8a07a; cursor: pointer; display: inline-flex; align-items: center; flex-shrink: 0; transition: max-width 0.12s ease, opacity 0.12s, padding 0.12s; }
+.task-item:hover .task-desc-btn { max-width: 22px; opacity: 1; padding: 0 2px; }
+.task-desc-btn.has-desc { max-width: 22px; opacity: 1; padding: 0 2px; color: #7a5820; }
 .task-desc-btn:hover { color: #2b1805; }
 
 .task-desc-row { display: none; padding-left: 24px; padding-bottom: 4px; }
@@ -644,7 +645,7 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.title = 'Open link';
       urlOpenInline.target = '_blank'; urlOpenInline.rel = 'noopener noreferrer';
       urlOpenInline.href = sanitizeUrl(task.url);
-      urlOpenInline.style.display = task.url ? '' : 'none';
+      urlOpenInline.classList.toggle('visible', !!task.url);
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
       const iconsDiv = document.createElement('div');
@@ -751,7 +752,7 @@ function buildDaySection(date, dayIndex) {
         linkBtn.title = has ? 'Edit link' : 'Add link';
         urlOpen.style.display = has ? '' : 'none';
         urlOpen.href = href;
-        urlOpenInline.style.display = has ? '' : 'none';
+        urlOpenInline.classList.toggle('visible', has);
         urlOpenInline.href = href;
       });
 
