@@ -688,7 +688,7 @@ function buildDaySection(date, dayIndex) {
     const lim = (userData.dailyLimits || {})[key];
     if (!lim || ((lim.h || 0) === 0 && (lim.m || 0) === 0)) { remSpan.textContent = ''; return; }
     const limMins = (lim.h || 0) * 60 + (lim.m || 0);
-    const used = (userData.tasks[key] || []).reduce((s, t) => s + (t.time || 0), 0);
+    const used = tasks.reduce((s, t) => s + (t.time || 0), 0);
     const rem = Math.max(0, limMins - used);
     remSpan.textContent = rem > 0 ? '(' + formatMinutes(rem) + ' free)' : '(full)';
   }
@@ -851,7 +851,7 @@ function buildDaySection(date, dayIndex) {
       iconsDiv.appendChild(descBtn); iconsDiv.appendChild(urlOpenInline); iconsDiv.appendChild(linkBtn); iconsDiv.appendChild(del);
       const rightGroup = document.createElement('div');
       rightGroup.className = 'task-right';
-      rightGroup.appendChild(dueInp); rightGroup.appendChild(timeWrap); rightGroup.appendChild(iconsDiv);
+      rightGroup.appendChild(iconsDiv); rightGroup.appendChild(timeWrap); rightGroup.appendChild(dueInp);
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
       mainRow.appendChild(rightGroup);
 
@@ -977,8 +977,18 @@ function buildDaySection(date, dayIndex) {
       }
       timeH.addEventListener('change', saveTaskTime);
       timeM.addEventListener('change', saveTaskTime);
-      timeH.addEventListener('input', () => timeHPart.classList.toggle('has-value', !!(parseInt(timeH.value) || 0)));
-      timeM.addEventListener('input', () => timeMPart.classList.toggle('has-value', !!(parseInt(timeM.value) || 0)));
+      timeH.addEventListener('input', () => {
+        const h = parseInt(timeH.value) || 0, m = parseInt(timeM.value) || 0;
+        tasks[i].time = (h * 60 + m) || undefined;
+        timeHPart.classList.toggle('has-value', h > 0);
+        updateRemaining();
+      });
+      timeM.addEventListener('input', () => {
+        const h = parseInt(timeH.value) || 0, m = parseInt(timeM.value) || 0;
+        tasks[i].time = (h * 60 + m) || undefined;
+        timeMPart.classList.toggle('has-value', m > 0);
+        updateRemaining();
+      });
     });
     updateRemaining();
   }
