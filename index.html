@@ -647,13 +647,14 @@ function buildDaySection(date, dayIndex) {
 
       /* text */
       const inp = document.createElement('input');
-      inp.type = 'text';
+      inp.type = 'text'; inp.draggable = false;
       inp.className = 'task-input' + (task.done ? ' done' : '');
       inp.value = task.text || ''; inp.placeholder = 'write something...';
 
       /* due date */
       const dueInp = document.createElement('input');
-      dueInp.type = 'text'; dueInp.className = 'task-due';
+      dueInp.type = 'text'; dueInp.draggable = false;
+      dueInp.className = 'task-due';
       dueInp.placeholder = 'DD/MM/YYYY';
       dueInp.value = task.due ? formatDueDisplay(task.due) : '';
       if (task.due) dueInp.classList.add('has-value');
