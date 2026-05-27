@@ -620,12 +620,17 @@ function buildDaySection(date, dayIndex) {
       handle.className = 'drag-handle';
       handle.textContent = '\u28BF';
 
-      /* Enable drag on the whole li only while holding the handle */
-      handle.addEventListener('mousedown', () => { li.draggable = true; });
-      handle.addEventListener('mouseup',   () => { li.draggable = false; });
+      /* li is always draggable; canDrag gates whether dragstart proceeds */
+      li.draggable = true;
+      let canDrag = false;
+
+      li.addEventListener('mousedown', e => {
+        canDrag = (e.target === handle);
+      });
 
       li.addEventListener('dragstart', e => {
-        if (!li.draggable) return;
+        if (!canDrag) { e.preventDefault(); return; }
+        canDrag = false;
         dragState.key  = key;
         dragState.idx  = i;
         dragState.task = Object.assign({}, tasks[i]);
@@ -636,7 +641,7 @@ function buildDaySection(date, dayIndex) {
       });
 
       li.addEventListener('dragend', () => {
-        li.draggable = false;
+        canDrag = false;
         document.body.classList.remove('dragging-active');
         li.classList.remove('dragging');
         document.querySelectorAll('.task-item').forEach(el => el.classList.remove('drag-over'));
