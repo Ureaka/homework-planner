@@ -113,8 +113,8 @@ body {
 .task-input::placeholder { color: #c0a870; font-style: italic; }
 
 .task-due { max-width: 0; overflow: hidden; opacity: 0; padding: 0; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; text-align: right; transition: max-width 0.15s ease, opacity 0.15s, padding 0.15s; }
-.task-item:hover .task-due { max-width: 134px; opacity: 1; padding: 0 6px; }
-.task-due.has-value        { max-width: 134px; opacity: 1; padding: 0 6px; }
+.task-item:hover .task-due { max-width: 134px; opacity: 1; padding: 0 4px 0 2px; }
+.task-due.has-value        { max-width: 134px; opacity: 1; padding: 0 4px 0 2px; }
 .task-due::placeholder { color: #d0b880; font-style: italic; }
 .task-due.overdue      { color: #7a1e0e; font-weight: 600; }
 
@@ -244,11 +244,12 @@ body.dragging-active .day-drop-zone { display: flex; }
   .mobile-nav    { display: flex; }
 }
 
-/* ── Task time input ─────────────────────────── */
-.task-time-inp { max-width: 0; overflow: hidden; opacity: 0; padding: 0; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #7a9a42; height: 32px; text-align: right; transition: max-width 0.15s ease, opacity 0.15s, padding 0.15s; }
-.task-item:hover .task-time-inp { max-width: 60px; opacity: 1; padding: 0 4px; }
-.task-time-inp.has-value { max-width: 60px; opacity: 1; padding: 0 4px; }
-.task-time-inp::placeholder { color: #c0a870; font-style: italic; }
+/* ── Task time inputs ────────────────────────── */
+.task-time-wrap { display: flex; align-items: center; gap: 1px; flex-shrink: 0; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.15s ease, opacity 0.15s; }
+.task-item:hover .task-time-wrap, .task-time-wrap.has-value { max-width: 80px; opacity: 1; }
+.task-time-inp { width: 22px; background: transparent; border: none; outline: none; border-bottom: 1px dashed rgba(122,154,66,0.5); font-family: 'Patrick Hand', cursive; font-size: 12px; color: #7a9a42; text-align: center; padding: 0; height: 32px; -moz-appearance: textfield; }
+.task-time-inp::-webkit-inner-spin-button, .task-time-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.task-time-lbl { font-family: 'Patrick Hand', cursive; font-size: 11px; color: #7a9a42; padding-right: 3px; }
 
 /* ── Day daily limit ─────────────────────────── */
 .day-limit-wrap { display: flex; align-items: center; gap: 2px; margin-left: auto; }
@@ -333,6 +334,39 @@ body.dragging-active .day-drop-zone { display: flex; }
     <div class="loading-text">Loading...</div>
   </div>
   <div class="mobile-nav" id="mobileNav"></div>
+</div>
+
+<!-- ── Split modal ───────────────────────────── -->
+<div class="split-overlay" id="splitOverlay">
+  <div class="split-modal">
+    <div class="split-title">Split a task across the week</div>
+    <div class="split-field">
+      <label class="split-label">Task name</label>
+      <input type="text" class="split-input" id="splitName" placeholder="e.g. English Assignment">
+    </div>
+    <div class="split-field">
+      <label class="split-label">Total time</label>
+      <div class="split-time-row">
+        <input type="number" class="split-num" id="splitTotalH" min="0" placeholder="0">
+        <span class="split-unit">h</span>
+        <input type="number" class="split-num" id="splitTotalM" min="0" max="59" placeholder="0">
+        <span class="split-unit">m</span>
+      </div>
+    </div>
+    <div class="split-field">
+      <label class="split-label">Link (optional)</label>
+      <input type="text" class="split-input" id="splitUrl" placeholder="https://...">
+    </div>
+    <div class="split-field">
+      <label class="split-label">Description (optional)</label>
+      <textarea class="split-textarea" id="splitDesc" placeholder="add a description..."></textarea>
+    </div>
+    <div class="split-error" id="splitError"></div>
+    <div class="split-actions">
+      <button class="split-cancel-btn" id="splitCancelBtn">Cancel</button>
+      <button class="split-go-btn" id="splitGoBtn">Split →</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── Firebase ───────────────────────────────── -->
@@ -779,18 +813,31 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.href = sanitizeUrl(task.url);
       urlOpenInline.classList.toggle('visible', !!task.url);
 
-      const timeInp = document.createElement('input');
-      timeInp.type = 'text'; timeInp.draggable = false;
-      timeInp.className = 'task-time-inp';
-      timeInp.placeholder = 'min';
-      if (task.time) { timeInp.value = formatMinutes(task.time); timeInp.classList.add('has-value'); }
+      const timeWrap = document.createElement('div');
+      timeWrap.className = 'task-time-wrap';
+      const timeH = document.createElement('input');
+      timeH.type = 'number'; timeH.min = '0'; timeH.draggable = false;
+      timeH.className = 'task-time-inp'; timeH.placeholder = 'h';
+      const timeHLbl = document.createElement('span');
+      timeHLbl.className = 'task-time-lbl'; timeHLbl.textContent = 'h';
+      const timeM = document.createElement('input');
+      timeM.type = 'number'; timeM.min = '0'; timeM.max = '59'; timeM.draggable = false;
+      timeM.className = 'task-time-inp'; timeM.placeholder = 'm';
+      const timeMLbl = document.createElement('span');
+      timeMLbl.className = 'task-time-lbl'; timeMLbl.textContent = 'm';
+      timeWrap.appendChild(timeH); timeWrap.appendChild(timeHLbl);
+      timeWrap.appendChild(timeM); timeWrap.appendChild(timeMLbl);
+      if (task.time) {
+        const th = Math.floor(task.time / 60), tm = task.time % 60;
+        if (th) timeH.value = th; if (tm) timeM.value = tm;
+        timeWrap.classList.add('has-value');
+      }
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
-      mainRow.appendChild(timeInp);
       const iconsDiv = document.createElement('div');
       iconsDiv.className = 'task-icons';
       iconsDiv.appendChild(descBtn); iconsDiv.appendChild(urlOpenInline); iconsDiv.appendChild(linkBtn); iconsDiv.appendChild(del);
-      mainRow.appendChild(dueInp); mainRow.appendChild(iconsDiv);
+      mainRow.appendChild(dueInp); mainRow.appendChild(timeWrap); mainRow.appendChild(iconsDiv);
 
       /* url row */
       const urlRow = document.createElement('div');
@@ -901,18 +948,16 @@ function buildDaySection(date, dayIndex) {
 
       del.addEventListener('click', () => { tasks.splice(i,1); saveTasks(key,tasks); render(); });
 
-      timeInp.addEventListener('focus', () => {
-        timeInp.value = tasks[i].time ? String(tasks[i].time) : '';
-        timeInp.select();
-      });
-      timeInp.addEventListener('blur', () => {
-        const mins = parseInt(timeInp.value) || 0;
+      function saveTaskTime() {
+        const h = parseInt(timeH.value) || 0, m = parseInt(timeM.value) || 0;
+        const mins = h * 60 + m;
         tasks[i].time = mins > 0 ? mins : undefined;
         saveTasks(key, tasks);
-        if (mins > 0) { timeInp.value = formatMinutes(mins); timeInp.classList.add('has-value'); }
-        else { timeInp.value = ''; timeInp.classList.remove('has-value'); }
+        timeWrap.classList.toggle('has-value', mins > 0);
         updateRemaining();
-      });
+      }
+      timeH.addEventListener('change', saveTaskTime);
+      timeM.addEventListener('change', saveTaskTime);
     });
     updateRemaining();
   }
@@ -1055,12 +1100,10 @@ function executeSplit() {
 }
 
 document.getElementById('splitOpenBtn').addEventListener('click', openSplitModal);
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('splitCancelBtn').addEventListener('click', closeSplitModal);
-  document.getElementById('splitGoBtn').addEventListener('click', executeSplit);
-  document.getElementById('splitOverlay').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeSplitModal();
-  });
+document.getElementById('splitCancelBtn').addEventListener('click', closeSplitModal);
+document.getElementById('splitGoBtn').addEventListener('click', executeSplit);
+document.getElementById('splitOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeSplitModal();
 });
 
 /* ── Navigation ──────────────────────────────── */
@@ -1070,37 +1113,5 @@ function changeWeek(delta) {
   setTimeout(() => { weekOffset += delta; renderNotebook(); nb.classList.remove('fade'); }, 200);
 }
 </script>
-<!-- ── Split modal ───────────────────────────── -->
-<div class="split-overlay" id="splitOverlay">
-  <div class="split-modal">
-    <div class="split-title">Split a task across the week</div>
-    <div class="split-field">
-      <label class="split-label">Task name</label>
-      <input type="text" class="split-input" id="splitName" placeholder="e.g. English Assignment">
-    </div>
-    <div class="split-field">
-      <label class="split-label">Total time</label>
-      <div class="split-time-row">
-        <input type="number" class="split-num" id="splitTotalH" min="0" placeholder="0">
-        <span class="split-unit">h</span>
-        <input type="number" class="split-num" id="splitTotalM" min="0" max="59" placeholder="0">
-        <span class="split-unit">m</span>
-      </div>
-    </div>
-    <div class="split-field">
-      <label class="split-label">Link (optional)</label>
-      <input type="text" class="split-input" id="splitUrl" placeholder="https://...">
-    </div>
-    <div class="split-field">
-      <label class="split-label">Description (optional)</label>
-      <textarea class="split-textarea" id="splitDesc" placeholder="add a description..."></textarea>
-    </div>
-    <div class="split-error" id="splitError"></div>
-    <div class="split-actions">
-      <button class="split-cancel-btn" id="splitCancelBtn">Cancel</button>
-      <button class="split-go-btn" id="splitGoBtn">Split →</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
