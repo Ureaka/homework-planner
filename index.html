@@ -851,7 +851,7 @@ function buildDaySection(date, dayIndex) {
       iconsDiv.appendChild(descBtn); iconsDiv.appendChild(urlOpenInline); iconsDiv.appendChild(linkBtn); iconsDiv.appendChild(del);
       const rightGroup = document.createElement('div');
       rightGroup.className = 'task-right';
-      rightGroup.appendChild(iconsDiv); rightGroup.appendChild(timeWrap); rightGroup.appendChild(dueInp);
+      rightGroup.appendChild(dueInp); rightGroup.appendChild(timeWrap); rightGroup.appendChild(iconsDiv);
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
       mainRow.appendChild(rightGroup);
 
