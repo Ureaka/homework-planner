@@ -125,6 +125,8 @@ body {
 .task-item:hover .task-del { opacity: 1; }
 .task-del:hover            { color: #7a1e0e; }
 
+.task-icons { display: flex; align-items: center; flex-shrink: 0; width: 72px; justify-content: flex-end; }
+
 /* URL row */
 .task-url-row { display: none; align-items: center; gap: 8px; height: 28px; padding-left: 24px; }
 .task-url-row.open { display: flex; }
@@ -645,7 +647,10 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.style.display = task.url ? '' : 'none';
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
-      mainRow.appendChild(dueInp); mainRow.appendChild(descBtn); mainRow.appendChild(urlOpenInline); mainRow.appendChild(linkBtn); mainRow.appendChild(del);
+      const iconsDiv = document.createElement('div');
+      iconsDiv.className = 'task-icons';
+      iconsDiv.appendChild(descBtn); iconsDiv.appendChild(urlOpenInline); iconsDiv.appendChild(linkBtn); iconsDiv.appendChild(del);
+      mainRow.appendChild(dueInp); mainRow.appendChild(iconsDiv);
 
       /* url row */
       const urlRow = document.createElement('div');
@@ -746,7 +751,7 @@ function buildDaySection(date, dayIndex) {
         linkBtn.title = has ? 'Edit link' : 'Add link';
         urlOpen.style.display = has ? '' : 'none';
         urlOpen.href = href;
-        urlOpenInline.style.visibility = has ? 'visible' : 'hidden';
+        urlOpenInline.style.display = has ? '' : 'none';
         urlOpenInline.href = href;
       });
 
