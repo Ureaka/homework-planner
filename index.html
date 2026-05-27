@@ -112,11 +112,9 @@ body {
 .task-input.done        { text-decoration: line-through; color: #9a8770; }
 .task-input::placeholder { color: #c0a870; font-style: italic; }
 
-.task-due { width: 128px; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; padding: 0 2px; text-align: right; overflow: hidden; transition: width 0.18s ease, opacity 0.18s ease, padding 0.18s ease; }
+.task-due { width: 128px; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; padding: 0 2px; text-align: right; }
 .task-due::placeholder { color: #d0b880; font-style: italic; }
 .task-due.overdue      { color: #7a1e0e; font-weight: 600; }
-.task-item:hover .task-due { width: 0; opacity: 0; padding: 0; }
-.task-due:focus { width: 128px !important; opacity: 1 !important; padding: 0 2px !important; }
 
 .task-link-btn { opacity: 0; background: none; border: none; color: #b8a07a; cursor: pointer; font-size: 14px; line-height: 32px; padding: 0 2px; flex-shrink: 0; transition: opacity 0.12s, color 0.12s; font-family: 'Patrick Hand', cursive; }
 .task-item:hover .task-link-btn { opacity: 1; }
@@ -647,7 +645,7 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.style.display = task.url ? '' : 'none';
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
-      mainRow.appendChild(dueInp); mainRow.appendChild(descBtn); mainRow.appendChild(linkBtn); mainRow.appendChild(urlOpenInline); mainRow.appendChild(del);
+      mainRow.appendChild(descBtn); mainRow.appendChild(dueInp); mainRow.appendChild(urlOpenInline); mainRow.appendChild(linkBtn); mainRow.appendChild(del);
 
       /* url row */
       const urlRow = document.createElement('div');
