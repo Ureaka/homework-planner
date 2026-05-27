@@ -112,7 +112,9 @@ body {
 .task-input.done        { text-decoration: line-through; color: #9a8770; }
 .task-input::placeholder { color: #c0a870; font-style: italic; }
 
-.task-due { width: 128px; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; padding: 0 6px; text-align: right; }
+.task-due { max-width: 0; overflow: hidden; opacity: 0; padding: 0; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; text-align: right; transition: max-width 0.15s ease, opacity 0.15s, padding 0.15s; }
+.task-item:hover .task-due { max-width: 134px; opacity: 1; padding: 0 6px; }
+.task-due.has-value        { max-width: 134px; opacity: 1; padding: 0 6px; }
 .task-due::placeholder { color: #d0b880; font-style: italic; }
 .task-due.overdue      { color: #7a1e0e; font-weight: 600; }
 
@@ -621,6 +623,7 @@ function buildDaySection(date, dayIndex) {
       dueInp.type = 'text'; dueInp.className = 'task-due';
       dueInp.placeholder = 'DD/MM/YYYY';
       dueInp.value = task.due ? formatDueDisplay(task.due) : '';
+      if (task.due) dueInp.classList.add('has-value');
 
       /* link button */
       const linkBtn = document.createElement('button');
@@ -714,9 +717,13 @@ function buildDaySection(date, dayIndex) {
         if (raw.length > 4) f = raw.slice(0,2)+'/'+raw.slice(2,4)+'/'+raw.slice(4);
         else if (raw.length > 2) f = raw.slice(0,2)+'/'+raw.slice(2);
         dueInp.value = f; tasks[i].due = f;
+        dueInp.classList.toggle('has-value', !!tasks[i].due);
         saveTasks(key, tasks); updateDueStyle();
       });
-      dueInp.addEventListener('blur',  () => { if (tasks[i].due) dueInp.value = formatDueDisplay(tasks[i].due); });
+      dueInp.addEventListener('blur',  () => {
+        dueInp.classList.toggle('has-value', !!tasks[i].due);
+        if (tasks[i].due) dueInp.value = formatDueDisplay(tasks[i].due);
+      });
       dueInp.addEventListener('focus', () => { dueInp.value = tasks[i].due || ''; });
 
       /* auto-resize helper */
