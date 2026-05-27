@@ -243,6 +243,48 @@ body.dragging-active .day-drop-zone { display: flex; }
   .task-due      { width: 96px; font-size: 11px; }
   .mobile-nav    { display: flex; }
 }
+
+/* ── Task time badge ─────────────────────────── */
+.task-time { font-family: 'Patrick Hand', cursive; font-size: 11px; color: #7a9a42; flex-shrink: 0; white-space: nowrap; padding: 0 4px; }
+
+/* ── Split modal ─────────────────────────────── */
+.split-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+.split-overlay.open { display: flex; }
+.split-modal {
+  background: #f2e7d1;
+  background-image: repeating-linear-gradient(transparent 0px, transparent 27px, #d6c8a8 27px, #d6c8a8 28px);
+  background-position: 0 54px;
+  border-radius: 8px; padding: 26px 32px 22px 52px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.75);
+  width: 460px; max-width: 100%;
+  max-height: calc(100dvh - 32px); overflow-y: auto;
+  position: relative;
+}
+.split-modal::before { content: ''; position: absolute; left: 42px; top: 0; bottom: 0; width: 1px; background: rgba(210,65,65,0.38); }
+.split-title { font-family: 'Caveat', cursive; font-size: 24px; font-weight: 700; color: #2b1805; margin-bottom: 16px; position: relative; z-index: 1; }
+.split-field { margin-bottom: 13px; position: relative; z-index: 1; }
+.split-label { font-family: 'Patrick Hand', cursive; font-size: 12px; color: #7a5820; display: block; margin-bottom: 3px; }
+.split-input { width: 100%; background: transparent; border: none; border-bottom: 1.5px solid #c8b48a; outline: none; font-family: 'Patrick Hand', cursive; font-size: 15px; color: #2b1805; padding: 1px 2px 3px; }
+.split-input::placeholder { color: #c0a870; font-style: italic; }
+.split-textarea { width: 100%; background: transparent; border: none; border-bottom: 1.5px solid #c8b48a; outline: none; font-family: 'Patrick Hand', cursive; font-size: 14px; color: #2b1805; padding: 1px 2px 3px; resize: none; height: 48px; }
+.split-textarea::placeholder { color: #c0a870; font-style: italic; }
+.split-time-row { display: flex; align-items: center; gap: 6px; }
+.split-num { width: 48px; background: transparent; border: none; border-bottom: 1.5px solid #c8b48a; outline: none; font-family: 'Patrick Hand', cursive; font-size: 15px; color: #2b1805; padding: 1px 2px 3px; text-align: center; }
+.split-num::placeholder { color: #c0a870; }
+.split-unit { font-family: 'Patrick Hand', cursive; font-size: 13px; color: #9a7a42; }
+.split-days-hdr { font-family: 'Caveat', cursive; font-size: 17px; font-weight: 700; color: #2b1805; margin: 16px 0 8px; border-bottom: 1.5px solid #c8b48a; padding-bottom: 2px; position: relative; z-index: 1; }
+.split-days-sub { font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; font-weight: 400; }
+.split-day-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; position: relative; z-index: 1; }
+.split-day-name { font-family: 'Patrick Hand', cursive; font-size: 14px; color: #2b1805; width: 110px; flex-shrink: 0; }
+.split-day-name.today { background: #7a1e0e; color: #f2e7d1; padding: 1px 6px; border-radius: 3px; display: inline-block; }
+.split-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; position: relative; z-index: 1; }
+.split-cancel-btn { background: none; border: 1.5px solid #c8b48a; color: #7a5820; border-radius: 5px; padding: 5px 16px; font-family: 'Patrick Hand', cursive; font-size: 14px; cursor: pointer; transition: background 0.15s; }
+.split-cancel-btn:hover { background: rgba(122,88,32,0.08); }
+.split-go-btn { background: #7a5820; border: none; color: #f2e7d1; border-radius: 5px; padding: 5px 20px; font-family: 'Patrick Hand', cursive; font-size: 14px; cursor: pointer; transition: background 0.15s; }
+.split-go-btn:hover { background: #5a4010; }
+.split-open-btn { background: rgba(242,231,209,0.08); border: 1.5px solid rgba(242,231,209,0.2); color: rgba(242,231,209,0.6); border-radius: 5px; padding: 4px 12px; font-family: 'Patrick Hand', cursive; font-size: 13px; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.split-open-btn:hover { background: rgba(242,231,209,0.18); color: rgba(242,231,209,0.95); }
+.split-error { font-family: 'Patrick Hand', cursive; font-size: 13px; color: #7a1e0e; margin-top: 6px; display: none; position: relative; z-index: 1; }
 </style>
 </head>
 <body>
@@ -271,6 +313,7 @@ body.dragging-active .day-drop-zone { display: flex; }
   <div class="user-bar">
     <img class="user-avatar" id="userAvatar" src="" alt="">
     <span class="user-name" id="userName"></span>
+    <button class="split-open-btn" id="splitOpenBtn">⧗ Split task</button>
     <button class="signout-btn" id="signOutBtn">Sign out</button>
   </div>
   <div class="mobile-tabs" id="mobileTabs"></div>
@@ -684,7 +727,13 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.href = sanitizeUrl(task.url);
       urlOpenInline.classList.toggle('visible', !!task.url);
 
+      const timeEl = document.createElement('span');
+      timeEl.className = 'task-time';
+      timeEl.style.display = task.time ? '' : 'none';
+      if (task.time) timeEl.textContent = formatMinutes(task.time);
+
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
+      mainRow.appendChild(timeEl);
       const iconsDiv = document.createElement('div');
       iconsDiv.className = 'task-icons';
       iconsDiv.appendChild(descBtn); iconsDiv.appendChild(urlOpenInline); iconsDiv.appendChild(linkBtn); iconsDiv.appendChild(del);
@@ -860,6 +909,116 @@ function renderNotebook() {
   rpFoot.textContent = dates[0].getFullYear(); rp.appendChild(rpFoot);
 }
 
+/* ── Split task ──────────────────────────────── */
+function formatMinutes(mins) {
+  mins = Math.round(mins);
+  const h = Math.floor(mins / 60), m = mins % 60;
+  if (h > 0 && m > 0) return h + 'h ' + m + 'm';
+  return h > 0 ? h + 'h' : m + 'm';
+}
+
+function openSplitModal() {
+  const rowsEl = document.getElementById('splitDayRows');
+  rowsEl.innerHTML = '';
+  const dates = getWeekDates(weekOffset);
+  const SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  dates.forEach((date, d) => {
+    const row = document.createElement('div');
+    row.className = 'split-day-row';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'split-day-name' + (isToday(date) ? ' today' : '');
+    nameSpan.textContent = SHORT[d] + ' ' + fmt(date);
+    const wrap = document.createElement('div');
+    wrap.className = 'split-time-row';
+    ['H','M'].forEach((unit, u) => {
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = '0'; inp.placeholder = '—';
+      inp.className = 'split-num'; inp.id = 'splitLim' + unit + '_' + d;
+      if (u === 1) inp.max = '59';
+      const lbl = document.createElement('span');
+      lbl.className = 'split-unit'; lbl.textContent = unit.toLowerCase();
+      wrap.appendChild(inp); wrap.appendChild(lbl);
+    });
+    row.appendChild(nameSpan); row.appendChild(wrap);
+    rowsEl.appendChild(row);
+  });
+  document.getElementById('splitOverlay').classList.add('open');
+  document.getElementById('splitError').style.display = 'none';
+  document.getElementById('splitName').focus();
+}
+
+function closeSplitModal() {
+  document.getElementById('splitOverlay').classList.remove('open');
+}
+
+function executeSplit() {
+  const errEl = document.getElementById('splitError');
+  errEl.style.display = 'none';
+  const name = document.getElementById('splitName').value.trim();
+  const totalH = parseInt(document.getElementById('splitTotalH').value) || 0;
+  const totalM = parseInt(document.getElementById('splitTotalM').value) || 0;
+  const totalMins = totalH * 60 + totalM;
+  if (!name) { errEl.textContent = 'Enter a task name.'; errEl.style.display = 'block'; return; }
+  if (totalMins <= 0) { errEl.textContent = 'Enter a total time greater than 0.'; errEl.style.display = 'block'; return; }
+
+  const url  = document.getElementById('splitUrl').value.trim();
+  const desc = document.getElementById('splitDesc').value.trim();
+  const dates = getWeekDates(weekOffset);
+
+  /* limits per day — Infinity if both fields blank */
+  const limits = dates.map((date, d) => {
+    const hEl = document.getElementById('splitLimH_' + d);
+    const mEl = document.getElementById('splitLimM_' + d);
+    if (hEl.value === '' && mEl.value === '') return Infinity;
+    return (parseInt(hEl.value) || 0) * 60 + (parseInt(mEl.value) || 0);
+  });
+
+  /* subtract already-allocated split-task time on days that have a limit */
+  const effective = limits.map((lim, d) => {
+    if (lim === Infinity) return Infinity;
+    const used = (userData.tasks[dkey(dates[d])] || []).reduce((s, t) => s + (t.time || 0), 0);
+    return Math.max(0, lim - used);
+  });
+
+  /* iterative split algorithm */
+  const alloc = new Array(7).fill(0);
+  let rem = totalMins;
+  while (rem > 0.5) {
+    const free = alloc.map((a, i) => a < effective[i] ? i : -1).filter(i => i >= 0);
+    if (!free.length) break;
+    const per = rem / free.length;
+    const cap = free.filter(i => effective[i] !== Infinity && alloc[i] + per > effective[i]);
+    if (!cap.length) { free.forEach(i => { alloc[i] += per; }); rem = 0; }
+    else { cap.forEach(i => { rem -= (effective[i] - alloc[i]); alloc[i] = effective[i]; }); }
+  }
+
+  /* create tasks */
+  dates.forEach((date, d) => {
+    const mins = Math.round(alloc[d]);
+    if (mins <= 0) return;
+    const key = dkey(date);
+    const tasks = loadTasks(key);
+    tasks.push({ id: uid(), text: name, done: false, due: '', url, desc, time: mins });
+    saveTasks(key, tasks);
+  });
+
+  /* clear form */
+  ['splitName','splitTotalH','splitTotalM','splitUrl','splitDesc'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+  });
+
+  closeSplitModal();
+  renderNotebook();
+}
+
+document.getElementById('splitOpenBtn').addEventListener('click', openSplitModal);
+document.getElementById('splitCancelBtn').addEventListener('click', closeSplitModal);
+document.getElementById('splitGoBtn').addEventListener('click', executeSplit);
+document.getElementById('splitOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeSplitModal();
+});
+
 /* ── Navigation ──────────────────────────────── */
 function changeWeek(delta) {
   const nb = document.getElementById('notebook');
@@ -867,5 +1026,39 @@ function changeWeek(delta) {
   setTimeout(() => { weekOffset += delta; renderNotebook(); nb.classList.remove('fade'); }, 200);
 }
 </script>
+<!-- ── Split modal ───────────────────────────── -->
+<div class="split-overlay" id="splitOverlay">
+  <div class="split-modal">
+    <div class="split-title">Split a task across the week</div>
+    <div class="split-field">
+      <label class="split-label">Task name</label>
+      <input type="text" class="split-input" id="splitName" placeholder="e.g. English Assignment">
+    </div>
+    <div class="split-field">
+      <label class="split-label">Total time</label>
+      <div class="split-time-row">
+        <input type="number" class="split-num" id="splitTotalH" min="0" placeholder="0">
+        <span class="split-unit">h</span>
+        <input type="number" class="split-num" id="splitTotalM" min="0" max="59" placeholder="0">
+        <span class="split-unit">m</span>
+      </div>
+    </div>
+    <div class="split-field">
+      <label class="split-label">Link (optional)</label>
+      <input type="text" class="split-input" id="splitUrl" placeholder="https://...">
+    </div>
+    <div class="split-field">
+      <label class="split-label">Description (optional)</label>
+      <textarea class="split-textarea" id="splitDesc" placeholder="add a description..."></textarea>
+    </div>
+    <div class="split-days-hdr">Daily limits <span class="split-days-sub">(leave blank = unlimited)</span></div>
+    <div id="splitDayRows"></div>
+    <div class="split-error" id="splitError"></div>
+    <div class="split-actions">
+      <button class="split-cancel-btn" id="splitCancelBtn">Cancel</button>
+      <button class="split-go-btn" id="splitGoBtn">Split →</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
