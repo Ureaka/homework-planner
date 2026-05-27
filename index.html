@@ -642,10 +642,10 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.title = 'Open link';
       urlOpenInline.target = '_blank'; urlOpenInline.rel = 'noopener noreferrer';
       urlOpenInline.href = sanitizeUrl(task.url);
-      urlOpenInline.style.display = task.url ? '' : 'none';
+      urlOpenInline.style.visibility = task.url ? 'visible' : 'hidden';
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
-      mainRow.appendChild(descBtn); mainRow.appendChild(dueInp); mainRow.appendChild(urlOpenInline); mainRow.appendChild(linkBtn); mainRow.appendChild(del);
+      mainRow.appendChild(dueInp); mainRow.appendChild(descBtn); mainRow.appendChild(urlOpenInline); mainRow.appendChild(linkBtn); mainRow.appendChild(del);
 
       /* url row */
       const urlRow = document.createElement('div');
@@ -746,7 +746,7 @@ function buildDaySection(date, dayIndex) {
         linkBtn.title = has ? 'Edit link' : 'Add link';
         urlOpen.style.display = has ? '' : 'none';
         urlOpen.href = href;
-        urlOpenInline.style.display = has ? '' : 'none';
+        urlOpenInline.style.visibility = has ? 'visible' : 'hidden';
         urlOpenInline.href = href;
       });
 
