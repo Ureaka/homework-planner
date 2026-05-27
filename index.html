@@ -244,8 +244,20 @@ body.dragging-active .day-drop-zone { display: flex; }
   .mobile-nav    { display: flex; }
 }
 
-/* ── Task time badge ─────────────────────────── */
-.task-time { font-family: 'Patrick Hand', cursive; font-size: 11px; color: #7a9a42; flex-shrink: 0; white-space: nowrap; padding: 0 4px; }
+/* ── Task time input ─────────────────────────── */
+.task-time-inp { max-width: 0; overflow: hidden; opacity: 0; padding: 0; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #7a9a42; height: 32px; text-align: right; transition: max-width 0.15s ease, opacity 0.15s, padding 0.15s; }
+.task-item:hover .task-time-inp { max-width: 60px; opacity: 1; padding: 0 4px; }
+.task-time-inp.has-value { max-width: 60px; opacity: 1; padding: 0 4px; }
+.task-time-inp::placeholder { color: #c0a870; font-style: italic; }
+
+/* ── Day daily limit ─────────────────────────── */
+.day-limit-wrap { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.day-limit-inp  { width: 26px; background: transparent; border: none; border-bottom: 1px dashed #c8b48a; outline: none; font-family: 'Patrick Hand', cursive; font-size: 11px; color: #7a5820; text-align: center; padding: 0 1px; }
+.day-limit-inp::-webkit-inner-spin-button, .day-limit-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.day-limit-inp[type=number] { -moz-appearance: textfield; }
+.day-limit-inp::placeholder { color: #d0b880; }
+.day-limit-unit { font-family: 'Patrick Hand', cursive; font-size: 11px; color: #9a7a42; }
+.day-remaining  { font-family: 'Patrick Hand', cursive; font-size: 11px; color: #7a9a42; padding-left: 5px; white-space: nowrap; }
 
 /* ── Split modal ─────────────────────────────── */
 .split-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
@@ -356,9 +368,9 @@ async function loadUserData(uid) {
   const doc = await db.collection('users').doc(uid).get();
   if (doc.exists) {
     const d = doc.data();
-    userData = { tasks: d.tasks || {}, notes: d.notes || {} };
+    userData = { tasks: d.tasks || {}, notes: d.notes || {}, dailyLimits: d.dailyLimits || {} };
   } else {
-    userData = { tasks: {}, notes: {} };
+    userData = { tasks: {}, notes: {}, dailyLimits: {} };
   }
 }
 
@@ -393,7 +405,7 @@ auth.onAuthStateChanged(async user => {
     initNotebook();
   } else {
     currentUser = null;
-    userData = { tasks: {}, notes: {} };
+    userData = { tasks: {}, notes: {}, dailyLimits: {} };
     weekOffset = 0; mobilePage = 0;
     dragState.key = null; dragState.idx = null; dragState.task = null;
     document.body.classList.remove('dragging-active');
@@ -528,7 +540,33 @@ function buildDaySection(date, dayIndex) {
   nameEl.textContent = DAY_NAMES[dayIndex];
   const dateEl = document.createElement('span');
   dateEl.className = 'day-date'; dateEl.textContent = fmt(date);
-  titleRow.appendChild(nameEl); titleRow.appendChild(dateEl);
+  /* daily limit inputs */
+  const limitWrap = document.createElement('div');
+  limitWrap.className = 'day-limit-wrap';
+  const limH = document.createElement('input');
+  limH.type = 'number'; limH.min = '0'; limH.className = 'day-limit-inp'; limH.placeholder = 'h'; limH.title = 'Daily limit hours';
+  const limHLbl = document.createElement('span');
+  limHLbl.className = 'day-limit-unit'; limHLbl.textContent = 'h';
+  const limM = document.createElement('input');
+  limM.type = 'number'; limM.min = '0'; limM.max = '59'; limM.className = 'day-limit-inp'; limM.placeholder = 'm'; limM.title = 'Daily limit minutes';
+  const limMLbl = document.createElement('span');
+  limMLbl.className = 'day-limit-unit'; limMLbl.textContent = 'm';
+  const remSpan = document.createElement('span');
+  remSpan.className = 'day-remaining';
+  limitWrap.appendChild(limH); limitWrap.appendChild(limHLbl);
+  limitWrap.appendChild(limM); limitWrap.appendChild(limMLbl);
+  limitWrap.appendChild(remSpan);
+  const savedLim = (userData.dailyLimits || {})[key];
+  if (savedLim) { if (savedLim.h) limH.value = savedLim.h; if (savedLim.m) limM.value = savedLim.m; }
+  function saveLim() {
+    if (!userData.dailyLimits) userData.dailyLimits = {};
+    userData.dailyLimits[key] = { h: parseInt(limH.value) || 0, m: parseInt(limM.value) || 0 };
+    saveUserData();
+    updateRemaining();
+  }
+  limH.addEventListener('change', saveLim);
+  limM.addEventListener('change', saveLim);
+  titleRow.appendChild(nameEl); titleRow.appendChild(dateEl); titleRow.appendChild(limitWrap);
   section.appendChild(titleRow);
 
   const list = document.createElement('ul');
@@ -603,6 +641,15 @@ function buildDaySection(date, dayIndex) {
   const addBtn = document.createElement('button');
   addBtn.className = 'add-btn'; addBtn.textContent = '+ add task';
   section.appendChild(addBtn);
+
+  function updateRemaining() {
+    const lim = (userData.dailyLimits || {})[key];
+    if (!lim || ((lim.h || 0) === 0 && (lim.m || 0) === 0)) { remSpan.textContent = ''; return; }
+    const limMins = (lim.h || 0) * 60 + (lim.m || 0);
+    const used = (userData.tasks[key] || []).reduce((s, t) => s + (t.time || 0), 0);
+    const rem = Math.max(0, limMins - used);
+    remSpan.textContent = rem > 0 ? '(' + formatMinutes(rem) + ' free)' : '(full)';
+  }
 
   function render() {
     list.innerHTML = '';
@@ -732,13 +779,14 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.href = sanitizeUrl(task.url);
       urlOpenInline.classList.toggle('visible', !!task.url);
 
-      const timeEl = document.createElement('span');
-      timeEl.className = 'task-time';
-      timeEl.style.display = task.time ? '' : 'none';
-      if (task.time) timeEl.textContent = formatMinutes(task.time);
+      const timeInp = document.createElement('input');
+      timeInp.type = 'text'; timeInp.draggable = false;
+      timeInp.className = 'task-time-inp';
+      timeInp.placeholder = 'min';
+      if (task.time) { timeInp.value = formatMinutes(task.time); timeInp.classList.add('has-value'); }
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
-      mainRow.appendChild(timeEl);
+      mainRow.appendChild(timeInp);
       const iconsDiv = document.createElement('div');
       iconsDiv.className = 'task-icons';
       iconsDiv.appendChild(descBtn); iconsDiv.appendChild(urlOpenInline); iconsDiv.appendChild(linkBtn); iconsDiv.appendChild(del);
@@ -852,7 +900,21 @@ function buildDaySection(date, dayIndex) {
       });
 
       del.addEventListener('click', () => { tasks.splice(i,1); saveTasks(key,tasks); render(); });
+
+      timeInp.addEventListener('focus', () => {
+        timeInp.value = tasks[i].time ? String(tasks[i].time) : '';
+        timeInp.select();
+      });
+      timeInp.addEventListener('blur', () => {
+        const mins = parseInt(timeInp.value) || 0;
+        tasks[i].time = mins > 0 ? mins : undefined;
+        saveTasks(key, tasks);
+        if (mins > 0) { timeInp.value = formatMinutes(mins); timeInp.classList.add('has-value'); }
+        else { timeInp.value = ''; timeInp.classList.remove('has-value'); }
+        updateRemaining();
+      });
     });
+    updateRemaining();
   }
 
   render();
@@ -923,30 +985,6 @@ function formatMinutes(mins) {
 }
 
 function openSplitModal() {
-  const rowsEl = document.getElementById('splitDayRows');
-  rowsEl.innerHTML = '';
-  const dates = getWeekDates(weekOffset);
-  const SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  dates.forEach((date, d) => {
-    const row = document.createElement('div');
-    row.className = 'split-day-row';
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'split-day-name' + (isToday(date) ? ' today' : '');
-    nameSpan.textContent = SHORT[d] + ' ' + fmt(date);
-    const wrap = document.createElement('div');
-    wrap.className = 'split-time-row';
-    ['H','M'].forEach((unit, u) => {
-      const inp = document.createElement('input');
-      inp.type = 'number'; inp.min = '0'; inp.placeholder = '—';
-      inp.className = 'split-num'; inp.id = 'splitLim' + unit + '_' + d;
-      if (u === 1) inp.max = '59';
-      const lbl = document.createElement('span');
-      lbl.className = 'split-unit'; lbl.textContent = unit.toLowerCase();
-      wrap.appendChild(inp); wrap.appendChild(lbl);
-    });
-    row.appendChild(nameSpan); row.appendChild(wrap);
-    rowsEl.appendChild(row);
-  });
   document.getElementById('splitOverlay').classList.add('open');
   document.getElementById('splitError').style.display = 'none';
   document.getElementById('splitName').focus();
@@ -970,12 +1008,11 @@ function executeSplit() {
   const desc = document.getElementById('splitDesc').value.trim();
   const dates = getWeekDates(weekOffset);
 
-  /* limits per day — Infinity if both fields blank */
-  const limits = dates.map((date, d) => {
-    const hEl = document.getElementById('splitLimH_' + d);
-    const mEl = document.getElementById('splitLimM_' + d);
-    if (hEl.value === '' && mEl.value === '') return Infinity;
-    return (parseInt(hEl.value) || 0) * 60 + (parseInt(mEl.value) || 0);
+  /* limits per day — read from inline daily limit inputs (Infinity if unset/zero) */
+  const limits = dates.map(date => {
+    const lim = (userData.dailyLimits || {})[dkey(date)];
+    if (!lim || ((lim.h || 0) === 0 && (lim.m || 0) === 0)) return Infinity;
+    return (lim.h || 0) * 60 + (lim.m || 0);
   });
 
   /* subtract already-allocated split-task time on days that have a limit */
@@ -1018,10 +1055,12 @@ function executeSplit() {
 }
 
 document.getElementById('splitOpenBtn').addEventListener('click', openSplitModal);
-document.getElementById('splitCancelBtn').addEventListener('click', closeSplitModal);
-document.getElementById('splitGoBtn').addEventListener('click', executeSplit);
-document.getElementById('splitOverlay').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeSplitModal();
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('splitCancelBtn').addEventListener('click', closeSplitModal);
+  document.getElementById('splitGoBtn').addEventListener('click', executeSplit);
+  document.getElementById('splitOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeSplitModal();
+  });
 });
 
 /* ── Navigation ──────────────────────────────── */
@@ -1056,8 +1095,6 @@ function changeWeek(delta) {
       <label class="split-label">Description (optional)</label>
       <textarea class="split-textarea" id="splitDesc" placeholder="add a description..."></textarea>
     </div>
-    <div class="split-days-hdr">Daily limits <span class="split-days-sub">(leave blank = unlimited)</span></div>
-    <div id="splitDayRows"></div>
     <div class="split-error" id="splitError"></div>
     <div class="split-actions">
       <button class="split-cancel-btn" id="splitCancelBtn">Cancel</button>
