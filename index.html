@@ -100,7 +100,7 @@ body {
 .task-item.dragging     { opacity: 0.35; }
 .task-item.drag-over .task-main-row { border-top: 2px solid #7a5820; }
 
-.task-main-row { display: flex; align-items: center; gap: 6px; min-height: 32px; }
+.task-main-row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
 
 .drag-handle { opacity: 0; cursor: grab; color: #b8a07a; font-size: 15px; flex-shrink: 0; padding: 0 1px; transition: opacity 0.12s; user-select: none; line-height: 32px; }
 .task-item:hover .drag-handle { opacity: 1; }
@@ -112,7 +112,7 @@ body {
 .task-input.done        { text-decoration: line-through; color: #9a8770; }
 .task-input::placeholder { color: #c0a870; font-style: italic; }
 
-.task-due { width: 128px; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; padding: 0 2px; text-align: right; }
+.task-due { width: 128px; flex-shrink: 0; background: transparent; border: none; outline: none; font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; height: 32px; padding: 0 6px; text-align: right; }
 .task-due::placeholder { color: #d0b880; font-style: italic; }
 .task-due.overdue      { color: #7a1e0e; font-weight: 600; }
 
@@ -125,7 +125,7 @@ body {
 .task-item:hover .task-del { opacity: 1; }
 .task-del:hover            { color: #7a1e0e; }
 
-.task-icons { display: flex; align-items: center; flex-shrink: 0; width: 72px; justify-content: flex-end; }
+.task-icons { display: flex; align-items: center; flex-shrink: 0; width: 90px; justify-content: flex-end; gap: 4px; }
 
 /* URL row */
 .task-url-row { display: none; align-items: center; gap: 8px; height: 28px; padding-left: 24px; }
