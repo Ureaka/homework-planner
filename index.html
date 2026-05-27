@@ -244,6 +244,9 @@ body.dragging-active .day-drop-zone { display: flex; }
   .mobile-nav    { display: flex; }
 }
 
+/* ── Task right group ────────────────────────── */
+.task-right { display: flex; align-items: center; flex-shrink: 0; }
+
 /* ── Task time inputs ────────────────────────── */
 .task-time-wrap { display: flex; align-items: center; flex-shrink: 0; }
 .task-time-h-part, .task-time-m-part { display: flex; align-items: center; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.12s ease, opacity 0.12s; }
@@ -289,8 +292,9 @@ body.dragging-active .day-drop-zone { display: flex; }
 .split-unit { font-family: 'Patrick Hand', cursive; font-size: 13px; color: #9a7a42; }
 .split-days-hdr { font-family: 'Caveat', cursive; font-size: 17px; font-weight: 700; color: #2b1805; margin: 16px 0 8px; border-bottom: 1.5px solid #c8b48a; padding-bottom: 2px; position: relative; z-index: 1; }
 .split-days-sub { font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42; font-weight: 400; }
-.split-day-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; position: relative; z-index: 1; }
-.split-day-name { font-family: 'Patrick Hand', cursive; font-size: 14px; color: #2b1805; width: 110px; flex-shrink: 0; }
+.split-day-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; position: relative; z-index: 1; }
+.split-day-cb { width: 14px; height: 14px; accent-color: #7a5820; cursor: pointer; flex-shrink: 0; }
+.split-day-name { font-family: 'Patrick Hand', cursive; font-size: 14px; color: #2b1805; cursor: pointer; }
 .split-day-name.today { background: #7a1e0e; color: #f2e7d1; padding: 1px 6px; border-radius: 3px; display: inline-block; }
 .split-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; position: relative; z-index: 1; }
 .split-cancel-btn { background: none; border: 1.5px solid #c8b48a; color: #7a5820; border-radius: 5px; padding: 5px 16px; font-family: 'Patrick Hand', cursive; font-size: 14px; cursor: pointer; transition: background 0.15s; }
@@ -363,6 +367,8 @@ body.dragging-active .day-drop-zone { display: flex; }
       <label class="split-label">Description (optional)</label>
       <textarea class="split-textarea" id="splitDesc" placeholder="add a description..."></textarea>
     </div>
+    <div class="split-days-hdr">Days <span class="split-days-sub">(uncheck to skip)</span></div>
+    <div id="splitDayRows"></div>
     <div class="split-error" id="splitError"></div>
     <div class="split-actions">
       <button class="split-cancel-btn" id="splitCancelBtn">Cancel</button>
@@ -840,11 +846,14 @@ function buildDaySection(date, dayIndex) {
         if (tm) { timeM.value = tm; timeMPart.classList.add('has-value'); }
       }
 
-      mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
       const iconsDiv = document.createElement('div');
       iconsDiv.className = 'task-icons';
       iconsDiv.appendChild(descBtn); iconsDiv.appendChild(urlOpenInline); iconsDiv.appendChild(linkBtn); iconsDiv.appendChild(del);
-      mainRow.appendChild(dueInp); mainRow.appendChild(timeWrap); mainRow.appendChild(iconsDiv);
+      const rightGroup = document.createElement('div');
+      rightGroup.className = 'task-right';
+      rightGroup.appendChild(dueInp); rightGroup.appendChild(timeWrap); rightGroup.appendChild(iconsDiv);
+      mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
+      mainRow.appendChild(rightGroup);
 
       /* url row */
       const urlRow = document.createElement('div');
@@ -960,12 +969,16 @@ function buildDaySection(date, dayIndex) {
         const mins = h * 60 + m;
         tasks[i].time = mins > 0 ? mins : undefined;
         saveTasks(key, tasks);
+        if (h === 0) timeH.value = '';
+        if (m === 0) timeM.value = '';
         timeHPart.classList.toggle('has-value', h > 0);
         timeMPart.classList.toggle('has-value', m > 0);
         updateRemaining();
       }
       timeH.addEventListener('change', saveTaskTime);
       timeM.addEventListener('change', saveTaskTime);
+      timeH.addEventListener('input', () => timeHPart.classList.toggle('has-value', !!(parseInt(timeH.value) || 0)));
+      timeM.addEventListener('input', () => timeMPart.classList.toggle('has-value', !!(parseInt(timeM.value) || 0)));
     });
     updateRemaining();
   }
@@ -1038,6 +1051,22 @@ function formatMinutes(mins) {
 }
 
 function openSplitModal() {
+  const rowsEl = document.getElementById('splitDayRows');
+  rowsEl.innerHTML = '';
+  const dates = getWeekDates(weekOffset);
+  const SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  dates.forEach((date, d) => {
+    const row = document.createElement('div');
+    row.className = 'split-day-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = true; cb.className = 'split-day-cb'; cb.id = 'splitDay_' + d;
+    const lbl = document.createElement('label');
+    lbl.htmlFor = 'splitDay_' + d;
+    lbl.className = 'split-day-name' + (isToday(date) ? ' today' : '');
+    lbl.textContent = SHORT[d] + ' ' + fmt(date);
+    row.appendChild(cb); row.appendChild(lbl);
+    rowsEl.appendChild(row);
+  });
   document.getElementById('splitOverlay').classList.add('open');
   document.getElementById('splitError').style.display = 'none';
   document.getElementById('splitName').focus();
@@ -1061,8 +1090,18 @@ function executeSplit() {
   const desc = document.getElementById('splitDesc').value.trim();
   const dates = getWeekDates(weekOffset);
 
-  /* limits per day — read from inline daily limit inputs (Infinity if unset/zero) */
-  const limits = dates.map(date => {
+  /* which days are selected */
+  const selectedDays = dates.map((_, d) => {
+    const cb = document.getElementById('splitDay_' + d);
+    return cb ? cb.checked : true;
+  });
+  if (!selectedDays.some(Boolean)) {
+    errEl.textContent = 'Select at least one day.'; errEl.style.display = 'block'; return;
+  }
+
+  /* limits per day — excluded days get 0, others read from inline daily limit inputs */
+  const limits = dates.map((date, d) => {
+    if (!selectedDays[d]) return 0;
     const lim = (userData.dailyLimits || {})[dkey(date)];
     if (!lim || ((lim.h || 0) === 0 && (lim.m || 0) === 0)) return Infinity;
     return (lim.h || 0) * 60 + (lim.m || 0);
@@ -1070,6 +1109,7 @@ function executeSplit() {
 
   /* subtract already-allocated split-task time on days that have a limit */
   const effective = limits.map((lim, d) => {
+    if (lim === 0) return 0;
     if (lim === Infinity) return Infinity;
     const used = (userData.tasks[dkey(dates[d])] || []).reduce((s, t) => s + (t.time || 0), 0);
     return Math.max(0, lim - used);
@@ -1087,15 +1127,17 @@ function executeSplit() {
     else { cap.forEach(i => { rem -= (effective[i] - alloc[i]); alloc[i] = effective[i]; }); }
   }
 
-  /* create tasks */
+  /* create tasks — update userData in memory, then single write */
   dates.forEach((date, d) => {
+    if (!selectedDays[d]) return;
     const mins = Math.round(alloc[d]);
     if (mins <= 0) return;
     const key = dkey(date);
-    const tasks = loadTasks(key);
-    tasks.push({ id: uid(), text: name, done: false, due: '', url, desc, time: mins });
-    saveTasks(key, tasks);
+    const dayTasks = loadTasks(key);
+    dayTasks.push({ id: uid(), text: name, done: false, due: '', url, desc, time: mins });
+    userData.tasks[key] = dayTasks;
   });
+  saveUserData();
 
   /* clear form */
   ['splitName','splitTotalH','splitTotalM','splitUrl','splitDesc'].forEach(id => {
