@@ -642,7 +642,7 @@ function buildDaySection(date, dayIndex) {
       urlOpenInline.title = 'Open link';
       urlOpenInline.target = '_blank'; urlOpenInline.rel = 'noopener noreferrer';
       urlOpenInline.href = sanitizeUrl(task.url);
-      urlOpenInline.style.visibility = task.url ? 'visible' : 'hidden';
+      urlOpenInline.style.display = task.url ? '' : 'none';
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
       mainRow.appendChild(dueInp); mainRow.appendChild(descBtn); mainRow.appendChild(urlOpenInline); mainRow.appendChild(linkBtn); mainRow.appendChild(del);
