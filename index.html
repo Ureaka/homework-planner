@@ -528,6 +528,35 @@ function buildDaySection(date, dayIndex) {
     }
   });
 
+  /* Section-level catch-all drop — handles drops anywhere in the day section
+     that weren't already consumed by a task li or the dropZone */
+  section.addEventListener('dragover', e => {
+    if (!dragState.key) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+  section.addEventListener('drop', e => {
+    e.preventDefault();
+    if (!dragState.key) return; /* already handled by a task li or dropZone */
+
+    const srcKey = dragState.key, srcIdx = dragState.idx, movedTask = dragState.task;
+    dragState.key = null; dragState.idx = null; dragState.task = null;
+    document.body.classList.remove('dragging-active');
+
+    if (srcKey === key) {
+      const dragged = tasks.splice(srcIdx, 1)[0];
+      tasks.push(dragged);
+      saveTasks(key, tasks);
+      render();
+    } else {
+      userData.tasks[srcKey] = (userData.tasks[srcKey] || []).filter((_, j) => j !== srcIdx);
+      tasks.push(movedTask);
+      userData.tasks[key] = tasks;
+      saveUserData();
+      renderNotebook();
+    }
+  });
+
   const addBtn = document.createElement('button');
   addBtn.className = 'add-btn'; addBtn.textContent = '+ add task';
   section.appendChild(addBtn);
@@ -658,7 +687,7 @@ function buildDaySection(date, dayIndex) {
 
       /* url row */
       const urlRow = document.createElement('div');
-      urlRow.className = 'task-url-row' + (task.url ? ' open' : '');
+      urlRow.className = 'task-url-row';
       const urlInp = document.createElement('input');
       urlInp.type = 'text'; urlInp.className = 'task-url-input';
       urlInp.placeholder = 'https://...'; urlInp.value = task.url || '';
@@ -670,7 +699,7 @@ function buildDaySection(date, dayIndex) {
 
       /* description row */
       const descRow = document.createElement('div');
-      descRow.className = 'task-desc-row' + (task.desc ? ' open' : '');
+      descRow.className = 'task-desc-row';
       const descInp = document.createElement('textarea');
       descInp.className = 'task-desc-input';
       descInp.placeholder = 'add a description...';
