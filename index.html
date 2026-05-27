@@ -245,8 +245,10 @@ body.dragging-active .day-drop-zone { display: flex; }
 }
 
 /* ── Task time inputs ────────────────────────── */
-.task-time-wrap { display: flex; align-items: center; gap: 1px; flex-shrink: 0; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.15s ease, opacity 0.15s; }
-.task-item:hover .task-time-wrap, .task-time-wrap.has-value { max-width: 80px; opacity: 1; }
+.task-time-wrap { display: flex; align-items: center; flex-shrink: 0; }
+.task-time-h-part, .task-time-m-part { display: flex; align-items: center; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.12s ease, opacity 0.12s; }
+.task-item:hover .task-time-h-part, .task-time-h-part.has-value { max-width: 40px; opacity: 1; }
+.task-item:hover .task-time-m-part, .task-time-m-part.has-value { max-width: 40px; opacity: 1; }
 .task-time-inp { width: 22px; background: transparent; border: none; outline: none; border-bottom: 1px dashed rgba(122,154,66,0.5); font-family: 'Patrick Hand', cursive; font-size: 12px; color: #7a9a42; text-align: center; padding: 0; height: 32px; -moz-appearance: textfield; }
 .task-time-inp::-webkit-inner-spin-button, .task-time-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .task-time-lbl { font-family: 'Patrick Hand', cursive; font-size: 11px; color: #7a9a42; padding-right: 3px; }
@@ -815,22 +817,27 @@ function buildDaySection(date, dayIndex) {
 
       const timeWrap = document.createElement('div');
       timeWrap.className = 'task-time-wrap';
+      const timeHPart = document.createElement('div');
+      timeHPart.className = 'task-time-h-part';
       const timeH = document.createElement('input');
       timeH.type = 'number'; timeH.min = '0'; timeH.draggable = false;
       timeH.className = 'task-time-inp'; timeH.placeholder = 'h';
       const timeHLbl = document.createElement('span');
       timeHLbl.className = 'task-time-lbl'; timeHLbl.textContent = 'h';
+      timeHPart.appendChild(timeH); timeHPart.appendChild(timeHLbl);
+      const timeMPart = document.createElement('div');
+      timeMPart.className = 'task-time-m-part';
       const timeM = document.createElement('input');
       timeM.type = 'number'; timeM.min = '0'; timeM.max = '59'; timeM.draggable = false;
       timeM.className = 'task-time-inp'; timeM.placeholder = 'm';
       const timeMLbl = document.createElement('span');
       timeMLbl.className = 'task-time-lbl'; timeMLbl.textContent = 'm';
-      timeWrap.appendChild(timeH); timeWrap.appendChild(timeHLbl);
-      timeWrap.appendChild(timeM); timeWrap.appendChild(timeMLbl);
+      timeMPart.appendChild(timeM); timeMPart.appendChild(timeMLbl);
+      timeWrap.appendChild(timeHPart); timeWrap.appendChild(timeMPart);
       if (task.time) {
         const th = Math.floor(task.time / 60), tm = task.time % 60;
-        if (th) timeH.value = th; if (tm) timeM.value = tm;
-        timeWrap.classList.add('has-value');
+        if (th) { timeH.value = th; timeHPart.classList.add('has-value'); }
+        if (tm) { timeM.value = tm; timeMPart.classList.add('has-value'); }
       }
 
       mainRow.appendChild(handle); mainRow.appendChild(cb); mainRow.appendChild(inp);
@@ -953,7 +960,8 @@ function buildDaySection(date, dayIndex) {
         const mins = h * 60 + m;
         tasks[i].time = mins > 0 ? mins : undefined;
         saveTasks(key, tasks);
-        timeWrap.classList.toggle('has-value', mins > 0);
+        timeHPart.classList.toggle('has-value', h > 0);
+        timeMPart.classList.toggle('has-value', m > 0);
         updateRemaining();
       }
       timeH.addEventListener('change', saveTaskTime);
