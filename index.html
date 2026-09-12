@@ -304,6 +304,103 @@ body.dragging-active .day-drop-zone { display: flex; }
 .split-open-btn { background: rgba(242,231,209,0.08); border: 1.5px solid rgba(242,231,209,0.2); color: rgba(242,231,209,0.6); border-radius: 5px; padding: 4px 12px; font-family: 'Patrick Hand', cursive; font-size: 13px; cursor: pointer; transition: background 0.2s, color 0.2s; }
 .split-open-btn:hover { background: rgba(242,231,209,0.18); color: rgba(242,231,209,0.95); }
 .split-error { font-family: 'Patrick Hand', cursive; font-size: 13px; color: #7a1e0e; margin-top: 6px; display: none; position: relative; z-index: 1; }
+
+/* ── Upcoming panel ─────────────────────────── */
+.upcoming-btn {
+  background: rgba(242,231,209,0.08); border: 1.5px solid rgba(242,231,209,0.2);
+  color: rgba(242,231,209,0.6); border-radius: 5px; padding: 4px 12px;
+  font-family: 'Patrick Hand', cursive; font-size: 13px; cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.upcoming-btn:hover { background: rgba(242,231,209,0.18); color: rgba(242,231,209,0.95); }
+
+.upcoming-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+.upcoming-overlay.open { display: flex; }
+.upcoming-modal {
+  background: #f2e7d1;
+  background-image: repeating-linear-gradient(transparent 0px, transparent 27px, #d6c8a8 27px, #d6c8a8 28px);
+  background-position: 0 54px;
+  border-radius: 8px; padding: 26px 32px 22px 52px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.75);
+  width: 520px; max-width: 100%;
+  max-height: calc(100dvh - 32px); overflow-y: auto;
+  position: relative;
+}
+.upcoming-modal::before { content: ''; position: absolute; left: 42px; top: 0; bottom: 0; width: 1px; background: rgba(210,65,65,0.38); }
+
+.upcoming-title { font-family: 'Caveat', cursive; font-size: 24px; font-weight: 700; color: #2b1805; margin-bottom: 4px; position: relative; z-index: 1; }
+.upcoming-section-hdr {
+  font-family: 'Caveat', cursive; font-size: 18px; font-weight: 700; color: #2b1805;
+  border-bottom: 1.5px solid #c8b48a; padding-bottom: 2px; margin: 14px 0 6px;
+  position: relative; z-index: 1;
+}
+.upcoming-list { list-style: none; position: relative; z-index: 1; }
+
+.upcoming-item { margin-bottom: 8px; position: relative; z-index: 1; }
+.upcoming-item-main { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.upcoming-item-name {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-family: 'Patrick Hand', cursive; font-size: 15px; color: #2b1805;
+  height: 28px; padding: 0; min-width: 0;
+}
+.upcoming-item-name::placeholder { color: #c0a870; font-style: italic; }
+
+.upcoming-item-date {
+  width: 100px; background: transparent; border: none; outline: none;
+  border-bottom: 1px dashed #c8b48a;
+  font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42;
+  height: 28px; text-align: right; padding: 0 2px; flex-shrink: 0;
+}
+.upcoming-item-date::placeholder { color: #d0b880; font-style: italic; }
+.upcoming-item-date.has-value { border-bottom-color: #9a7a42; }
+
+.upcoming-countdown {
+  font-family: 'Patrick Hand', cursive; font-size: 12px; color: #7a9a42;
+  flex-shrink: 0; min-width: 64px; text-align: right; white-space: nowrap;
+}
+.upcoming-countdown.urgent { color: #c44d1a; font-weight: 600; }
+.upcoming-countdown.overdue { color: #7a1e0e; font-weight: 600; }
+
+.upcoming-item-icons { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.upcoming-icon-btn {
+  background: none; border: none; color: #b8a07a; cursor: pointer;
+  font-size: 13px; line-height: 28px; padding: 0 2px;
+  font-family: 'Patrick Hand', cursive; transition: color 0.12s;
+}
+.upcoming-icon-btn:hover { color: #2b1805; }
+.upcoming-icon-btn.has-link { color: #4a6fa5; }
+.upcoming-icon-btn.has-desc { color: #7a5820; }
+
+.upcoming-desc-row { display: none; padding-left: 4px; padding-bottom: 2px; }
+.upcoming-desc-row.open { display: block; }
+.upcoming-desc-input {
+  width: 100%; background: transparent; border: none;
+  border-bottom: 1px dashed #c8b48a; outline: none;
+  font-family: 'Patrick Hand', cursive; font-size: 13px; color: #4a3a1e;
+  padding: 2px 2px 3px; resize: none; overflow: hidden;
+  line-height: 20px; min-height: 24px;
+}
+.upcoming-desc-input::placeholder { color: #c0a870; font-style: italic; }
+
+.upcoming-url-row { display: none; align-items: center; gap: 8px; height: 26px; padding-left: 4px; }
+.upcoming-url-row.open { display: flex; }
+.upcoming-url-input {
+  flex: 1; background: transparent; border: none;
+  border-bottom: 1px dashed #c8b48a; outline: none;
+  font-family: 'Patrick Hand', cursive; font-size: 12.5px; color: #4a6fa5;
+  height: 24px; padding: 0 2px; min-width: 0;
+}
+.upcoming-url-input::placeholder { color: #c0a870; font-style: italic; }
+.upcoming-url-open { font-family: 'Patrick Hand', cursive; font-size: 12.5px; color: #4a6fa5; text-decoration: none; flex-shrink: 0; }
+.upcoming-url-open:hover { text-decoration: underline; }
+
+.upcoming-add-btn {
+  background: none; border: none; font-family: 'Patrick Hand', cursive;
+  font-size: 13px; color: #c0a870; cursor: pointer; padding: 0;
+  height: 28px; display: inline-flex; align-items: center; gap: 3px;
+  position: relative; z-index: 1; transition: color 0.15s;
+}
+.upcoming-add-btn:hover { color: #7a5820; }
 </style>
 </head>
 <body>
@@ -332,6 +429,7 @@ body.dragging-active .day-drop-zone { display: flex; }
   <div class="user-bar">
     <img class="user-avatar" id="userAvatar" src="" alt="">
     <span class="user-name" id="userName"></span>
+    <button class="upcoming-btn" id="upcomingOpenBtn">Upcoming</button>
     <button class="split-open-btn" id="splitOpenBtn">⧗ Split task</button>
     <button class="signout-btn" id="signOutBtn">Sign out</button>
   </div>
@@ -377,6 +475,21 @@ body.dragging-active .day-drop-zone { display: flex; }
   </div>
 </div>
 
+<!-- ── Upcoming modal ─────────────────────────── -->
+<div class="upcoming-overlay" id="upcomingOverlay">
+  <div class="upcoming-modal">
+    <div class="upcoming-title">Upcoming</div>
+
+    <div class="upcoming-section-hdr">Tests</div>
+    <ul class="upcoming-list" id="upcomingTests"></ul>
+    <button class="upcoming-add-btn" id="addTestBtn">+ add test</button>
+
+    <div class="upcoming-section-hdr">Assignments</div>
+    <ul class="upcoming-list" id="upcomingAssignments"></ul>
+    <button class="upcoming-add-btn" id="addAssignmentBtn">+ add assignment</button>
+  </div>
+</div>
+
 <!-- ── Firebase ───────────────────────────────── -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -410,9 +523,9 @@ async function loadUserData(uid) {
   const doc = await db.collection('users').doc(uid).get();
   if (doc.exists) {
     const d = doc.data();
-    userData = { tasks: d.tasks || {}, notes: d.notes || {}, dailyLimits: d.dailyLimits || {} };
+    userData = { tasks: d.tasks || {}, notes: d.notes || {}, dailyLimits: d.dailyLimits || {}, upcoming: d.upcoming || { tests: [], assignments: [] } };
   } else {
-    userData = { tasks: {}, notes: {}, dailyLimits: {} };
+    userData = { tasks: {}, notes: {}, dailyLimits: {}, upcoming: { tests: [], assignments: [] } };
   }
 }
 
@@ -447,7 +560,7 @@ auth.onAuthStateChanged(async user => {
     initNotebook();
   } else {
     currentUser = null;
-    userData = { tasks: {}, notes: {}, dailyLimits: {} };
+    userData = { tasks: {}, notes: {}, dailyLimits: {}, upcoming: { tests: [], assignments: [] } };
     weekOffset = 0; mobilePage = 0;
     dragState.key = null; dragState.idx = null; dragState.task = null;
     document.body.classList.remove('dragging-active');
@@ -1164,6 +1277,179 @@ document.getElementById('splitCancelBtn').addEventListener('click', closeSplitMo
 document.getElementById('splitGoBtn').addEventListener('click', executeSplit);
 document.getElementById('splitOverlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeSplitModal();
+});
+
+/* ── Upcoming panel ──────────────────────────── */
+function openUpcoming() {
+  document.getElementById('upcomingOverlay').classList.add('open');
+  renderUpcoming();
+}
+function closeUpcoming() {
+  document.getElementById('upcomingOverlay').classList.remove('open');
+}
+
+function renderUpcoming() {
+  if (!userData.upcoming) userData.upcoming = { tests: [], assignments: [] };
+  renderUpcomingList('upcomingTests', userData.upcoming.tests);
+  renderUpcomingList('upcomingAssignments', userData.upcoming.assignments);
+}
+
+function renderUpcomingList(containerId, items) {
+  const list = document.getElementById(containerId);
+  list.innerHTML = '';
+  items.forEach((item, i) => {
+    const li = document.createElement('li');
+    li.className = 'upcoming-item';
+
+    /* main row */
+    const main = document.createElement('div');
+    main.className = 'upcoming-item-main';
+
+    const nameInp = document.createElement('input');
+    nameInp.type = 'text'; nameInp.className = 'upcoming-item-name';
+    nameInp.placeholder = 'name...'; nameInp.value = item.text || '';
+
+    const dateInp = document.createElement('input');
+    dateInp.type = 'text'; dateInp.className = 'upcoming-item-date';
+    dateInp.placeholder = 'DD/MM/YYYY';
+    dateInp.value = item.due ? formatDueDisplay(item.due) : '';
+    if (item.due) dateInp.classList.add('has-value');
+
+    const countdown = document.createElement('span');
+    countdown.className = 'upcoming-countdown';
+    updateCountdown(countdown, item.due);
+
+    const icons = document.createElement('div');
+    icons.className = 'upcoming-item-icons';
+
+    const descBtn = document.createElement('button');
+    descBtn.className = 'upcoming-icon-btn' + (item.desc ? ' has-desc' : '');
+    descBtn.innerHTML = '<svg width="14" height="10" viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="22" height="16" rx="2"/><path d="M5 6h.01M9 6h.01M13 6h.01M17 6h.01M7 10h.01M11 10h.01M15 10h.01M6 14h12"/></svg>';
+    descBtn.title = 'Description';
+
+    const linkBtn = document.createElement('button');
+    linkBtn.className = 'upcoming-icon-btn' + (item.url ? ' has-link' : '');
+    linkBtn.textContent = item.url ? '\u2197' : '\u2295';
+    linkBtn.title = item.url ? 'Edit link' : 'Add link';
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'upcoming-icon-btn';
+    delBtn.textContent = '\u2715'; delBtn.title = 'Delete';
+
+    icons.appendChild(descBtn); icons.appendChild(linkBtn); icons.appendChild(delBtn);
+    main.appendChild(nameInp); main.appendChild(dateInp); main.appendChild(countdown); main.appendChild(icons);
+
+    /* description row */
+    const descRow = document.createElement('div');
+    descRow.className = 'upcoming-desc-row';
+    const descInp = document.createElement('textarea');
+    descInp.className = 'upcoming-desc-input';
+    descInp.placeholder = 'add a description...';
+    descInp.value = item.desc || ''; descInp.rows = 1;
+    descRow.appendChild(descInp);
+
+    /* url row */
+    const urlRow = document.createElement('div');
+    urlRow.className = 'upcoming-url-row';
+    const urlInp = document.createElement('input');
+    urlInp.type = 'text'; urlInp.className = 'upcoming-url-input';
+    urlInp.placeholder = 'https://...'; urlInp.value = item.url || '';
+    const urlOpen = document.createElement('a');
+    urlOpen.className = 'upcoming-url-open'; urlOpen.textContent = 'open \u2197';
+    urlOpen.target = '_blank'; urlOpen.rel = 'noopener noreferrer';
+    urlOpen.href = sanitizeUrl(item.url); urlOpen.style.display = item.url ? '' : 'none';
+    urlRow.appendChild(urlInp); urlRow.appendChild(urlOpen);
+
+    li.appendChild(main); li.appendChild(descRow); li.appendChild(urlRow);
+    list.appendChild(li);
+
+    /* auto-resize desc */
+    function resizeDesc() { descInp.style.height = 'auto'; descInp.style.height = descInp.scrollHeight + 'px'; }
+    setTimeout(resizeDesc, 0);
+
+    /* events */
+    nameInp.addEventListener('input', () => { item.text = nameInp.value; saveUpcoming(); });
+    nameInp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); items.splice(i+1, 0, {id:uid(),text:'',due:'',url:'',desc:''}); saveUpcoming(); renderUpcomingList(containerId, items); list.querySelectorAll('.upcoming-item-name')[i+1]?.focus(); }
+      else if (e.key === 'Backspace' && nameInp.value === '') { e.preventDefault(); items.splice(i,1); saveUpcoming(); renderUpcomingList(containerId, items); list.querySelectorAll('.upcoming-item-name')[Math.max(0,i-1)]?.focus(); }
+    });
+
+    dateInp.addEventListener('input', () => {
+      const raw = dateInp.value.replace(/\D/g,'').slice(0,8);
+      let f = raw;
+      if (raw.length > 4) f = raw.slice(0,2)+'/'+raw.slice(2,4)+'/'+raw.slice(4);
+      else if (raw.length > 2) f = raw.slice(0,2)+'/'+raw.slice(2);
+      dateInp.value = f; item.due = f;
+      dateInp.classList.toggle('has-value', !!item.due);
+      updateCountdown(countdown, item.due);
+      saveUpcoming();
+    });
+    dateInp.addEventListener('blur', () => {
+      dateInp.classList.toggle('has-value', !!item.due);
+      if (item.due) dateInp.value = formatDueDisplay(item.due);
+    });
+    dateInp.addEventListener('focus', () => { dateInp.value = item.due || ''; });
+
+    descBtn.addEventListener('click', () => {
+      descRow.classList.toggle('open');
+      if (descRow.classList.contains('open')) { resizeDesc(); descInp.focus(); }
+    });
+    descInp.addEventListener('input', () => {
+      item.desc = descInp.value; saveUpcoming(); resizeDesc();
+      descBtn.classList.toggle('has-desc', !!item.desc);
+    });
+
+    linkBtn.addEventListener('click', () => {
+      urlRow.classList.toggle('open');
+      if (urlRow.classList.contains('open')) urlInp.focus();
+    });
+    urlInp.addEventListener('input', () => {
+      item.url = urlInp.value.trim(); saveUpcoming();
+      const has = !!item.url;
+      linkBtn.classList.toggle('has-link', has);
+      linkBtn.textContent = has ? '\u2197' : '\u2295';
+      urlOpen.style.display = has ? '' : 'none';
+      urlOpen.href = sanitizeUrl(item.url);
+    });
+
+    delBtn.addEventListener('click', () => { items.splice(i,1); saveUpcoming(); renderUpcomingList(containerId, items); });
+    delBtn.addEventListener('mouseenter', () => { delBtn.style.color = '#7a1e0e'; });
+    delBtn.addEventListener('mouseleave', () => { delBtn.style.color = ''; });
+  });
+}
+
+function updateCountdown(el, due) {
+  const d = parseDue(due);
+  if (!d) { el.textContent = ''; el.className = 'upcoming-countdown'; return; }
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.ceil((d - today) / 86400000);
+  if (diff < 0) { el.textContent = Math.abs(diff) + 'd overdue'; el.className = 'upcoming-countdown overdue'; }
+  else if (diff === 0) { el.textContent = 'today'; el.className = 'upcoming-countdown urgent'; }
+  else if (diff === 1) { el.textContent = 'tomorrow'; el.className = 'upcoming-countdown urgent'; }
+  else if (diff <= 3) { el.textContent = diff + ' days'; el.className = 'upcoming-countdown urgent'; }
+  else { el.textContent = diff + ' days'; el.className = 'upcoming-countdown'; }
+}
+
+function saveUpcoming() {
+  if (!userData.upcoming) userData.upcoming = { tests: [], assignments: [] };
+  saveUserData();
+}
+
+document.getElementById('upcomingOpenBtn').addEventListener('click', openUpcoming);
+document.getElementById('upcomingOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeUpcoming(); });
+document.getElementById('addTestBtn').addEventListener('click', () => {
+  if (!userData.upcoming) userData.upcoming = { tests: [], assignments: [] };
+  userData.upcoming.tests.push({id:uid(), text:'', due:'', url:'', desc:''});
+  saveUpcoming(); renderUpcoming();
+  const list = document.getElementById('upcomingTests');
+  list.querySelectorAll('.upcoming-item-name')[userData.upcoming.tests.length-1]?.focus();
+});
+document.getElementById('addAssignmentBtn').addEventListener('click', () => {
+  if (!userData.upcoming) userData.upcoming = { tests: [], assignments: [] };
+  userData.upcoming.assignments.push({id:uid(), text:'', due:'', url:'', desc:''});
+  saveUpcoming(); renderUpcoming();
+  const list = document.getElementById('upcomingAssignments');
+  list.querySelectorAll('.upcoming-item-name')[userData.upcoming.assignments.length-1]?.focus();
 });
 
 /* ── Navigation ──────────────────────────────── */
