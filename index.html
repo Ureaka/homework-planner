@@ -346,7 +346,7 @@ body.dragging-active .day-drop-zone { display: flex; }
 .upcoming-item-name::placeholder { color: #c0a870; font-style: italic; }
 
 .upcoming-item-date {
-  width: 100px; background: transparent; border: none; outline: none;
+  width: 200px; background: transparent; border: none; outline: none;
   border-bottom: 1px dashed #c8b48a;
   font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42;
   height: 28px; text-align: right; padding: 0 2px; flex-shrink: 0;
@@ -1294,10 +1294,41 @@ function renderUpcoming() {
   renderUpcomingList('upcomingAssignments', userData.upcoming.assignments);
 }
 
+function parseFirstDue(due) {
+  if (!due) return null;
+  const part = due.split(' - ')[0].trim();
+  return parseDue(part);
+}
+function parseLastDue(due) {
+  if (!due) return null;
+  const parts = due.split(' - ');
+  return parseDue(parts[parts.length - 1].trim()) || parseDue(parts[0].trim());
+}
+function formatDueRangeDisplay(due) {
+  if (!due) return '';
+  const parts = due.split(' - ').map(p => p.trim());
+  const d1 = parseDue(parts[0]);
+  const display1 = d1 ? `${MONTHS[d1.getMonth()]} ${ordinal(d1.getDate())} ${d1.getFullYear()}` : parts[0];
+  if (parts.length < 2 || !parts[1]) return display1;
+  const d2 = parseDue(parts[1]);
+  const display2 = d2 ? `${MONTHS[d2.getMonth()]} ${ordinal(d2.getDate())} ${d2.getFullYear()}` : parts[1];
+  return display1 + ' - ' + display2;
+}
+
 function renderUpcomingList(containerId, items) {
   const list = document.getElementById(containerId);
   list.innerHTML = '';
-  items.forEach((item, i) => {
+  /* sort by first date, no-date items go last */
+  const sorted = items.map((item, i) => ({item, origIdx: i}));
+  sorted.sort((a, b) => {
+    const da = parseFirstDue(a.item.due), db = parseFirstDue(b.item.due);
+    if (!da && !db) return a.origIdx - b.origIdx;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da - db;
+  });
+  sorted.forEach(({item, origIdx}, si) => {
+    const i = origIdx;
     const li = document.createElement('li');
     li.className = 'upcoming-item';
 
@@ -1308,16 +1339,17 @@ function renderUpcomingList(containerId, items) {
     const nameInp = document.createElement('input');
     nameInp.type = 'text'; nameInp.className = 'upcoming-item-name';
     nameInp.placeholder = 'name...'; nameInp.value = item.text || '';
+    nameInp.dataset.itemId = item.id;
 
     const dateInp = document.createElement('input');
     dateInp.type = 'text'; dateInp.className = 'upcoming-item-date';
-    dateInp.placeholder = 'DD/MM/YYYY';
-    dateInp.value = item.due ? formatDueDisplay(item.due) : '';
+    dateInp.placeholder = 'DD/MM/YYYY - DD/MM/YYYY';
+    dateInp.value = item.due ? formatDueRangeDisplay(item.due) : '';
     if (item.due) dateInp.classList.add('has-value');
 
     const countdown = document.createElement('span');
     countdown.className = 'upcoming-countdown';
-    updateCountdown(countdown, item.due);
+    updateCountdownRange(countdown, item.due);
 
     const icons = document.createElement('div');
     icons.className = 'upcoming-item-icons';
@@ -1370,23 +1402,38 @@ function renderUpcomingList(containerId, items) {
     /* events */
     nameInp.addEventListener('input', () => { item.text = nameInp.value; saveUpcoming(); });
     nameInp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); items.splice(i+1, 0, {id:uid(),text:'',due:'',url:'',desc:''}); saveUpcoming(); renderUpcomingList(containerId, items); list.querySelectorAll('.upcoming-item-name')[i+1]?.focus(); }
-      else if (e.key === 'Backspace' && nameInp.value === '') { e.preventDefault(); items.splice(i,1); saveUpcoming(); renderUpcomingList(containerId, items); list.querySelectorAll('.upcoming-item-name')[Math.max(0,i-1)]?.focus(); }
+      if (e.key === 'Enter') { e.preventDefault(); const newItem = {id:uid(),text:'',due:'',url:'',desc:''}; items.splice(i+1, 0, newItem); saveUpcoming(); renderUpcomingList(containerId, items); list.querySelector('[data-item-id="'+newItem.id+'"]')?.focus(); }
+      else if (e.key === 'Backspace' && nameInp.value === '') { e.preventDefault(); const focusId = i > 0 ? items[i-1].id : (items.length > 1 ? items[1].id : null); items.splice(i,1); saveUpcoming(); renderUpcomingList(containerId, items); if (focusId) list.querySelector('[data-item-id="'+focusId+'"]')?.focus(); }
     });
 
     dateInp.addEventListener('input', () => {
-      const raw = dateInp.value.replace(/\D/g,'').slice(0,8);
-      let f = raw;
-      if (raw.length > 4) f = raw.slice(0,2)+'/'+raw.slice(2,4)+'/'+raw.slice(4);
-      else if (raw.length > 2) f = raw.slice(0,2)+'/'+raw.slice(2);
-      dateInp.value = f; item.due = f;
+      /* Allow digits, slashes and hyphens; format each half as DD/MM/YYYY */
+      const val = dateInp.value;
+      const hyphenIdx = val.indexOf('-');
+      function fmtHalf(str) {
+        const raw = str.replace(/\D/g,'').slice(0,8);
+        if (raw.length > 4) return raw.slice(0,2)+'/'+raw.slice(2,4)+'/'+raw.slice(4);
+        if (raw.length > 2) return raw.slice(0,2)+'/'+raw.slice(2);
+        return raw;
+      }
+      let result;
+      if (hyphenIdx >= 0) {
+        const left = fmtHalf(val.slice(0, hyphenIdx));
+        const right = fmtHalf(val.slice(hyphenIdx + 1));
+        result = left + ' - ' + right;
+      } else {
+        result = fmtHalf(val);
+      }
+      dateInp.value = result;
+      item.due = result.replace(/\s*-\s*$/, '').trim(); /* strip trailing bare hyphen */
       dateInp.classList.toggle('has-value', !!item.due);
-      updateCountdown(countdown, item.due);
+      updateCountdownRange(countdown, item.due);
       saveUpcoming();
     });
     dateInp.addEventListener('blur', () => {
       dateInp.classList.toggle('has-value', !!item.due);
-      if (item.due) dateInp.value = formatDueDisplay(item.due);
+      if (item.due) dateInp.value = formatDueRangeDisplay(item.due);
+      renderUpcomingList(containerId, items); /* re-sort after editing */
     });
     dateInp.addEventListener('focus', () => { dateInp.value = item.due || ''; });
 
@@ -1429,6 +1476,18 @@ function updateCountdown(el, due) {
   else if (diff <= 3) { el.textContent = diff + ' days'; el.className = 'upcoming-countdown urgent'; }
   else { el.textContent = diff + ' days'; el.className = 'upcoming-countdown'; }
 }
+function updateCountdownRange(el, due) {
+  /* use the last date in a range for countdown */
+  const d = parseLastDue(due);
+  if (!d) { el.textContent = ''; el.className = 'upcoming-countdown'; return; }
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.ceil((d - today) / 86400000);
+  if (diff < 0) { el.textContent = Math.abs(diff) + 'd overdue'; el.className = 'upcoming-countdown overdue'; }
+  else if (diff === 0) { el.textContent = 'today'; el.className = 'upcoming-countdown urgent'; }
+  else if (diff === 1) { el.textContent = 'tomorrow'; el.className = 'upcoming-countdown urgent'; }
+  else if (diff <= 3) { el.textContent = diff + ' days'; el.className = 'upcoming-countdown urgent'; }
+  else { el.textContent = diff + ' days'; el.className = 'upcoming-countdown'; }
+}
 
 function saveUpcoming() {
   if (!userData.upcoming) userData.upcoming = { tests: [], assignments: [] };
@@ -1439,17 +1498,17 @@ document.getElementById('upcomingOpenBtn').addEventListener('click', openUpcomin
 document.getElementById('upcomingOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeUpcoming(); });
 document.getElementById('addTestBtn').addEventListener('click', () => {
   if (!userData.upcoming) userData.upcoming = { tests: [], assignments: [] };
-  userData.upcoming.tests.push({id:uid(), text:'', due:'', url:'', desc:''});
+  const newItem = {id:uid(), text:'', due:'', url:'', desc:''};
+  userData.upcoming.tests.push(newItem);
   saveUpcoming(); renderUpcoming();
-  const list = document.getElementById('upcomingTests');
-  list.querySelectorAll('.upcoming-item-name')[userData.upcoming.tests.length-1]?.focus();
+  document.getElementById('upcomingTests').querySelector('[data-item-id="'+newItem.id+'"]')?.focus();
 });
 document.getElementById('addAssignmentBtn').addEventListener('click', () => {
   if (!userData.upcoming) userData.upcoming = { tests: [], assignments: [] };
-  userData.upcoming.assignments.push({id:uid(), text:'', due:'', url:'', desc:''});
+  const newItem = {id:uid(), text:'', due:'', url:'', desc:''};
+  userData.upcoming.assignments.push(newItem);
   saveUpcoming(); renderUpcoming();
-  const list = document.getElementById('upcomingAssignments');
-  list.querySelectorAll('.upcoming-item-name')[userData.upcoming.assignments.length-1]?.focus();
+  document.getElementById('upcomingAssignments').querySelector('[data-item-id="'+newItem.id+'"]')?.focus();
 });
 
 /* ── Navigation ──────────────────────────────── */
