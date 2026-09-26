@@ -346,7 +346,7 @@ body.dragging-active .day-drop-zone { display: flex; }
 .upcoming-item-name::placeholder { color: #c0a870; font-style: italic; }
 
 .upcoming-item-date {
-  width: 200px; background: transparent; border: none; outline: none;
+  width: 100px; background: transparent; border: none; outline: none;
   border-bottom: 1px dashed #c8b48a;
   font-family: 'Patrick Hand', cursive; font-size: 12px; color: #9a7a42;
   height: 28px; text-align: right; padding: 0 2px; flex-shrink: 0;
@@ -1295,24 +1295,7 @@ function renderUpcoming() {
 }
 
 function parseFirstDue(due) {
-  if (!due) return null;
-  const part = due.split(' - ')[0].trim();
-  return parseDue(part);
-}
-function parseLastDue(due) {
-  if (!due) return null;
-  const parts = due.split(' - ');
-  return parseDue(parts[parts.length - 1].trim()) || parseDue(parts[0].trim());
-}
-function formatDueRangeDisplay(due) {
-  if (!due) return '';
-  const parts = due.split(' - ').map(p => p.trim());
-  const d1 = parseDue(parts[0]);
-  const display1 = d1 ? `${MONTHS[d1.getMonth()]} ${ordinal(d1.getDate())} ${d1.getFullYear()}` : parts[0];
-  if (parts.length < 2 || !parts[1]) return display1;
-  const d2 = parseDue(parts[1]);
-  const display2 = d2 ? `${MONTHS[d2.getMonth()]} ${ordinal(d2.getDate())} ${d2.getFullYear()}` : parts[1];
-  return display1 + ' - ' + display2;
+  return parseDue(due);
 }
 
 function renderUpcomingList(containerId, items) {
@@ -1343,13 +1326,13 @@ function renderUpcomingList(containerId, items) {
 
     const dateInp = document.createElement('input');
     dateInp.type = 'text'; dateInp.className = 'upcoming-item-date';
-    dateInp.placeholder = 'DD/MM/YYYY - DD/MM/YYYY';
-    dateInp.value = item.due ? formatDueRangeDisplay(item.due) : '';
+    dateInp.placeholder = 'DD/MM/YYYY';
+    dateInp.value = item.due ? formatDueDisplay(item.due) : '';
     if (item.due) dateInp.classList.add('has-value');
 
     const countdown = document.createElement('span');
     countdown.className = 'upcoming-countdown';
-    updateCountdownRange(countdown, item.due);
+    updateCountdown(countdown, item.due);
 
     const icons = document.createElement('div');
     icons.className = 'upcoming-item-icons';
@@ -1407,32 +1390,18 @@ function renderUpcomingList(containerId, items) {
     });
 
     dateInp.addEventListener('input', () => {
-      /* Allow digits, slashes and hyphens; format each half as DD/MM/YYYY */
-      const val = dateInp.value;
-      const hyphenIdx = val.indexOf('-');
-      function fmtHalf(str) {
-        const raw = str.replace(/\D/g,'').slice(0,8);
-        if (raw.length > 4) return raw.slice(0,2)+'/'+raw.slice(2,4)+'/'+raw.slice(4);
-        if (raw.length > 2) return raw.slice(0,2)+'/'+raw.slice(2);
-        return raw;
-      }
-      let result;
-      if (hyphenIdx >= 0) {
-        const left = fmtHalf(val.slice(0, hyphenIdx));
-        const right = fmtHalf(val.slice(hyphenIdx + 1));
-        result = left + ' - ' + right;
-      } else {
-        result = fmtHalf(val);
-      }
-      dateInp.value = result;
-      item.due = result.replace(/\s*-\s*$/, '').trim(); /* strip trailing bare hyphen */
+      const raw = dateInp.value.replace(/\D/g,'').slice(0,8);
+      let f = raw;
+      if (raw.length > 4) f = raw.slice(0,2)+'/'+raw.slice(2,4)+'/'+raw.slice(4);
+      else if (raw.length > 2) f = raw.slice(0,2)+'/'+raw.slice(2);
+      dateInp.value = f; item.due = f;
       dateInp.classList.toggle('has-value', !!item.due);
-      updateCountdownRange(countdown, item.due);
+      updateCountdown(countdown, item.due);
       saveUpcoming();
     });
     dateInp.addEventListener('blur', () => {
       dateInp.classList.toggle('has-value', !!item.due);
-      if (item.due) dateInp.value = formatDueRangeDisplay(item.due);
+      if (item.due) dateInp.value = formatDueDisplay(item.due);
       renderUpcomingList(containerId, items); /* re-sort after editing */
     });
     dateInp.addEventListener('focus', () => { dateInp.value = item.due || ''; });
@@ -1467,18 +1436,6 @@ function renderUpcomingList(containerId, items) {
 
 function updateCountdown(el, due) {
   const d = parseDue(due);
-  if (!d) { el.textContent = ''; el.className = 'upcoming-countdown'; return; }
-  const today = new Date(); today.setHours(0,0,0,0);
-  const diff = Math.ceil((d - today) / 86400000);
-  if (diff < 0) { el.textContent = Math.abs(diff) + 'd overdue'; el.className = 'upcoming-countdown overdue'; }
-  else if (diff === 0) { el.textContent = 'today'; el.className = 'upcoming-countdown urgent'; }
-  else if (diff === 1) { el.textContent = 'tomorrow'; el.className = 'upcoming-countdown urgent'; }
-  else if (diff <= 3) { el.textContent = diff + ' days'; el.className = 'upcoming-countdown urgent'; }
-  else { el.textContent = diff + ' days'; el.className = 'upcoming-countdown'; }
-}
-function updateCountdownRange(el, due) {
-  /* use the last date in a range for countdown */
-  const d = parseLastDue(due);
   if (!d) { el.textContent = ''; el.className = 'upcoming-countdown'; return; }
   const today = new Date(); today.setHours(0,0,0,0);
   const diff = Math.ceil((d - today) / 86400000);
